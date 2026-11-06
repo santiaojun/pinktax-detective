@@ -13,6 +13,14 @@ from typing import Optional
 DEMO_LABEL = "DEMO DATA"
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "equivalence"
 EXTRACTION_DIR = Path(__file__).parent / "fixtures" / "extraction"
+DEMO_IMAGE_DIR = Path(__file__).parent / "fixtures" / "demo_images"
+
+# Synthetic label photos (no brands, only the color differs) for the photo
+# demo. Keys are demo_name values for extract.from_image(demo=True).
+DEMO_IMAGES = {
+    "pink_label": DEMO_IMAGE_DIR / "pink_label.png",
+    "blue_label": DEMO_IMAGE_DIR / "blue_label.png",
+}
 
 DEMO_PAIRS = {
     "body_wash": {

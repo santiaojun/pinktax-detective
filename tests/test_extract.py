@@ -203,3 +203,23 @@ def test_prompt_requires_product_type_first_in_attributes():
 @pytest.mark.parametrize("pair_id", sorted(DEMO_PAIRS))
 def test_demo_fixture_attributes_start_with_function(pair_id):
     assert load_extraction_fixture(pair_id)["attributes"].startswith("Function: ")
+
+
+def test_demo_images_have_fixtures_and_give_premium():
+    from demo_pairs import DEMO_IMAGES
+    from pinktax.models import POTENTIAL_PREMIUM, Product
+    from pinktax.verdict import compare
+
+    assert set(DEMO_IMAGES) == {"pink_label", "blue_label"}
+    fields = {}
+    for name, path in DEMO_IMAGES.items():
+        assert path.is_file() and path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+        fields[name] = from_image(path.read_bytes(), "image/png", demo=True, demo_name=name,
+                                  client=FakeClient(error=AssertionError("no API in demo")))
+        assert "price" not in fields[name]
+        assert fields[name]["attributes"].startswith("Function: body cleanser")
+    a = Product(**fields["pink_label"], price=Decimal("12.99"))
+    b = Product(**fields["blue_label"], price=Decimal("9.99"))
+    a.label, b.label = "women", "men"
+    eq = {"comparable": "yes", "differences": [], "missing": [], "note": ""}
+    assert compare(a, b, eq).verdict == POTENTIAL_PREMIUM
