@@ -45,6 +45,9 @@ VERDICT_DISPLAY = {
     PRICE_COMPARISON_ONLY: (st.info, "Price comparison only"),
 }
 CAVEAT = "One pair is not evidence of a market-wide pattern."
+BLIND_NOTE = ("Claude saw only the two products' attributes and sizes, labeled A and B: "
+              "not the price, the marketing label, or the product name.")
+NO_SAVING = "No saving to add for this result."
 MD_SPECIAL = "\\`*_{}[]()<>#+-.!|$~"
 VIEWS = ["Discover", "Compare", "My Savings"]
 EMPTY_SAVINGS = "No swaps yet. Compare a pair to find your first one."
@@ -113,6 +116,7 @@ def init_state():
     st.session_state.setdefault("demo_pair_id", None)
     st.session_state.setdefault("errors", {})
     st.session_state.setdefault("result", None)
+    st.session_state.setdefault("report_open", False)
 
 
 def fill(values_by_side: dict, pair_id):
@@ -206,11 +210,24 @@ def product_form(side: str, container):
         st.date_input("Date seen", key=f"{side}_date_seen")
 
 
-def report_panel(result: dict):
+def compare_and_open():
+    """Compare button: run the comparison, then open the report dialog."""
+    run_compare()
+    st.session_state.report_open = st.session_state.result is not None
+
+
+def open_report():
+    st.session_state.report_open = True
+
+
+def close_report():
+    st.session_state.report_open = False
+
+
+def report_summary(result: dict):
     report = result["report"]
     names = result["names"]
 
-    st.header("Report")
     if result["demo"]:
         st.badge(DEMO_LABEL, color="orange")
     show, title = VERDICT_DISPLAY[report.verdict]
@@ -236,9 +253,19 @@ def report_panel(result: dict):
             yearly = yearly_savings(report, times)
             st.success(esc(f"Bought {times} times a year, that's {money(yearly)} a year."))
 
+    else:
+        st.caption(NO_SAVING)
+
     if report.reasons:
         st.subheader("Reasons")
         st.markdown("\n".join(f"- {esc(r)}" for r in report.reasons))
+
+
+def report_details(result: dict):
+    report = result["report"]
+
+    st.subheader("Blind equivalence check")
+    st.caption(BLIND_NOTE)
     if report.differences:
         st.subheader("Attribute differences")
         st.table([
@@ -256,7 +283,22 @@ def report_panel(result: dict):
     for warning in report.warnings:
         st.warning(esc(warning))
 
+
+def report_panel(result: dict):
+    summary_tab, details_tab = st.tabs(["Summary", "Details"])
+    with summary_tab:
+        report_summary(result)
+    with details_tab:
+        report_details(result)
     st.caption(CAVEAT)
+
+
+@st.dialog("Report", width="large", on_dismiss=close_report)
+def report_dialog(result: dict):
+    report_panel(result)
+    if st.button("Close"):
+        close_report()
+        st.rerun()
 
 
 def go_compare(term):
@@ -356,6 +398,11 @@ def main():
         st.write("Compare two products marketed to women and men, check they're really "
                  "equivalent, and see the price per unit.")
 
+        prefill = st.session_state.get("compare_prefill")
+        if prefill:
+            st.info(f"From Discover: you searched for {esc(prefill)}. Enter a candidate "
+                    "you found as Product B, then compare.")
+
         st.write("Load a demo pair:")
         cols = st.columns(len(DEMO_PAIRS) + 1)
         for col, (pair_id, pair) in zip(cols, DEMO_PAIRS.items()):
@@ -371,15 +418,21 @@ def main():
 
         st.number_input("Times bought per year (optional)", min_value=0, step=1,
                         value=0, key="times_per_year")
-        st.button("Compare", type="primary", on_click=run_compare)
+        st.button("Compare", type="primary", on_click=compare_and_open)
 
         if st.session_state.errors:
             st.error("Fix the highlighted fields, then compare again.")
         if st.session_state.result:
-            report_panel(st.session_state.result)
+            _, title = VERDICT_DISPLAY[st.session_state.result["report"].verdict]
+            last, view = st.columns([3, 1])
+            last.write(f"Last result: **{title}**")
+            view.button("View report", on_click=open_report, use_container_width=True)
 
     with savings_tab:
         savings_view()
+
+    if st.session_state.report_open and st.session_state.result:
+        report_dialog(st.session_state.result)
 
 
 main()
