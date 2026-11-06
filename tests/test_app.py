@@ -150,8 +150,8 @@ def test_discover_retailer_cards():
     at.session_state["pick_essence"] = "5 blade disposable razor"
     at.run()
     assert not at.exception
-    buttons = at.get("link_button")
-    assert [b.proto.label for b in buttons] == ["Open", "Open", "Open"]
+    buttons = [b for b in at.get("link_button") if b.proto.label == "Open"]
+    assert len(buttons) == 3
     assert [b.proto.url.split("/")[2] for b in buttons] == [
         "www.google.com", "www.amazon.com", "www.target.com"]
     assert sum("Search for '5 blade disposable razor'" == c.value for c in at.caption) == 3
@@ -176,3 +176,25 @@ def test_savings_hero_computed_from_session_swaps():
     at.session_state["swaps"] = records
     at.run()
     assert hero(at) == {"Your potential savings": "$5.16", "Swaps saved": "2", "Best swap": "$3.00"}
+
+
+def test_illustrative_product_cards_only_for_womens_razor():
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    at.text_input(key="discover_query").set_value("women's razor").run()
+    at.session_state["pick_essence"] = "5 blade disposable razor"
+    at.run()
+    assert not at.exception
+    note = "Illustrative examples. AI-generated images, example prices, not live retailer prices."
+    assert any(c.value == note for c in at.caption)
+    opens = [b.proto for b in at.get("link_button") if b.proto.label == "Open search"]
+    assert [b.url for b in opens] == [
+        "https://www.amazon.com/s?k=women%27s%20razor",
+        "https://www.amazon.com/s?k=disposable%20razor",
+    ]
+    texts = [m.value for m in at.markdown]
+    assert r"Example price \$8\.99" in texts and r"Example price \$6\.49" in texts
+
+    at.text_input(key="discover_query").set_value("jewelry organizer").run()
+    at.session_state["pick_essence"] = at.session_state["pick_essence"] or None
+    at.run()
+    assert not any(c.value == note for c in at.caption)

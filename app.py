@@ -1,4 +1,5 @@
-from decimal import ROUND_HALF_UP, Decimal
+import json
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 
 import anthropic
@@ -19,7 +20,7 @@ from pinktax.models import (
     UNITS,
     Product,
 )
-from pinktax.alternatives import DEMO_QUERIES, suggest
+from pinktax.alternatives import DEMO_QUERIES, build_links, suggest
 from pinktax.normalize import parse_positive
 from pinktax.verdict import compare, yearly_savings
 
@@ -56,6 +57,9 @@ VIEWS = ["Discover", "Compare", "My Savings"]
 EMPTY_SAVINGS = "No swaps yet. Compare a pair to find your first one."
 EXAMPLE_QUERIES = ["women's razor", "women's sun protection jacket", "jewelry organizer"]
 DEMO_PHOTOS = Path(__file__).parent / "assets" / "demo_photos"
+DEMO_PRODUCTS = Path(__file__).parent / "assets" / "demo_products"
+ILLUSTRATIVE_NOTE = ("Illustrative examples. AI-generated images, example prices, "
+                     "not live retailer prices.")
 PHOTO_TYPES = ["png", "jpg", "jpeg", "gif", "webp"]
 PHOTO_ERROR = "Couldn't read this photo. Fill in the fields by hand."
 DEMO_PHOTO_ERROR = ("Demo mode has saved readings only for the two demo label images "
@@ -533,9 +537,49 @@ def discover_view():
             st.markdown(f"**{esc(link.retailer)}**")
             st.caption(esc(f"Search for '{term}'"))
             st.link_button("Open", link.url, use_container_width=True)
+    example_products(query)
     with st.container(key="discover_note"):
         st.write("Found a candidate? Compare it.")
         st.button("Compare it", type="primary", on_click=go_compare, args=(term,))
+
+
+def load_example_products(query: str) -> list:
+    """Illustrative cards from assets/demo_products/demo_products.json for this query."""
+    try:
+        with open(DEMO_PRODUCTS / "demo_products.json", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+    key = query.strip().casefold().replace("’", "'")
+    cards = []
+    for item in data.get(key, []) if not key.startswith("_") else []:
+        try:
+            price = Decimal(str(item["example_price"]))
+            image = DEMO_PRODUCTS / Path(str(item["image"])).name  # stay in this folder
+            cards.append({"role": str(item["role"]), "title": str(item["title"]),
+                          "price": price, "image": image,
+                          "search_term": str(item["search_term"])})
+        except (KeyError, TypeError, InvalidOperation):
+            continue
+    return cards
+
+
+def example_products(query: str):
+    """Illustrative product cards (demo only): example prices, real search links."""
+    cards = load_example_products(query)
+    if not cards:
+        return
+    st.caption(ILLUSTRATIVE_NOTE)
+    cols = st.columns(2)
+    for i, (col, card) in enumerate(zip(cols, cards)):
+        amazon = next(l.url for l in build_links(card["search_term"]) if l.retailer == "Amazon")
+        with col.container(border=True, key=f"example_product_{i}"):
+            if card["image"].is_file():
+                st.image(str(card["image"]), width=220)
+            st.caption(esc(card["role"]))
+            st.markdown(f"**{esc(card['title'])}**")
+            st.write(esc(f"Example price {money(card['price'])}"))
+            st.link_button("Open search", amazon, use_container_width=True)
 
 
 def savings_hero(records: list):

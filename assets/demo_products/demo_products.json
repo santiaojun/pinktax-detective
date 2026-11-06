@@ -1,0 +1,7 @@
+{
+  "_note": "ILLUSTRATIVE DEMO DATA. Example prices are made up for the demo, not live retailer prices. Links open real retailer searches.",
+  "women's razor": [
+    {"role": "Original search", "title": "Women's Razor", "image": "razor_pink.jpg", "example_price": "8.99", "search_term": "women's razor"},
+    {"role": "Alternative search", "title": "Disposable Razor", "image": "razor_blue.jpg", "example_price": "6.49", "search_term": "disposable razor"}
+  ]
+}
