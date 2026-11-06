@@ -6,6 +6,7 @@ from pinktax.models import (
     NO_OBSERVED_PREMIUM,
     NOT_COMPARABLE,
     POTENTIAL_PREMIUM,
+    PRICE_COMPARISON_ONLY,
     Product,
 )
 from pinktax.verdict import COULDNT_CHECK, compare, yearly_savings
@@ -84,12 +85,24 @@ def test_two_pack_vs_one_pack_per_item():
     assert r.savings_at_size == Decimal("1")
 
 
-def test_unknown_or_neutral_label_no_gender_verdict():
+def test_unknown_or_neutral_label_price_comparison_only():
     for label in ("unknown", "neutral"):
         r = compare(women(label=label), men(), EQUIVALENT)
-        assert r.verdict == INSUFFICIENT_EVIDENCE
-        assert r.premium_pct is None and r.savings_at_size is None
-        assert "no gender verdict" in r.reasons[0]
+        assert r.verdict == PRICE_COMPARISON_ONLY
+        assert r.reasons[0] == "Not a women vs men pair, so no gender verdict."
+        assert r.unit_price_a == Decimal("3") and r.unit_price_b == Decimal("2.5")
+        assert r.premium_pct is None
+        assert r.savings_per_unit is None and r.savings_at_size is None
+
+
+def test_unknown_label_with_bad_data_still_insufficient():
+    r = compare(women(label="unknown", price="abc"), men(), EQUIVALENT)
+    assert r.verdict == INSUFFICIENT_EVIDENCE
+
+
+def test_unit_prices_in_a_b_order():
+    r = compare(men(), women(), EQUIVALENT)
+    assert r.unit_price_a == Decimal("2.5") and r.unit_price_b == Decimal("3")
 
 
 # Gate A

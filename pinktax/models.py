@@ -13,12 +13,14 @@ POTENTIAL_PREMIUM = "POTENTIAL_PREMIUM"
 NO_OBSERVED_PREMIUM = "NO_OBSERVED_PREMIUM"
 NOT_COMPARABLE = "NOT_COMPARABLE"
 INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+PRICE_COMPARISON_ONLY = "PRICE_COMPARISON_ONLY"  # neutral/unknown label: no gender verdict
 
 VERDICTS = (
     POTENTIAL_PREMIUM,
     NO_OBSERVED_PREMIUM,
     NOT_COMPARABLE,
     INSUFFICIENT_EVIDENCE,
+    PRICE_COMPARISON_ONLY,
 )
 
 # Units and marketing labels (plan.md section 0)
@@ -44,6 +46,8 @@ class Report:
     verdict: str
     premium_pct: Optional[Decimal] = None
     unit_basis: Optional[str] = None
+    unit_price_a: Optional[Decimal] = None  # product A's price per unit_basis
+    unit_price_b: Optional[Decimal] = None  # product B's price per unit_basis
     savings_per_unit: Optional[Decimal] = None
     savings_at_size: Optional[Decimal] = None
     differences: list = field(default_factory=list)

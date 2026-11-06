@@ -1,0 +1,8 @@
+{
+  "comparable": "yes",
+  "differences": [
+    {"attribute": "scent", "a": "rose", "b": "cedar", "material": false}
+  ],
+  "missing": [],
+  "note": "Same function and ingredient list; only the scent differs."
+}

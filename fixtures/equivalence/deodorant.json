@@ -1,0 +1,11 @@
+{
+  "comparable": "unclear",
+  "differences": [
+    {"attribute": "scent", "a": "powder", "b": "pine", "material": false}
+  ],
+  "missing": [
+    "active ingredient for product B",
+    "protection duration for product B"
+  ],
+  "note": "Product B lists no active ingredient, so it may be a deodorant rather than an antiperspirant."
+}

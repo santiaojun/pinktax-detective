@@ -13,6 +13,7 @@ from pinktax.models import (
     NO_OBSERVED_PREMIUM,
     NOT_COMPARABLE,
     POTENTIAL_PREMIUM,
+    PRICE_COMPARISON_ONLY,
     Product,
     Report,
 )
@@ -87,38 +88,34 @@ def compare(a: Product, b: Product, equivalence) -> Report:
     # Gate C: context warnings never block.
     warnings = _context_warnings(a, b)
 
+    common = dict(
+        unit_basis=na.basis,
+        unit_price_a=na.unit_price,
+        unit_price_b=nb.unit_price,
+        differences=differences,
+        missing=missing,
+        warnings=warnings,
+    )
     if blocked:
-        return Report(
-            verdict=blocked,
-            unit_basis=na.basis,
-            differences=differences,
-            missing=missing,
-            warnings=warnings,
-            reasons=reasons,
-        )
+        return Report(verdict=blocked, reasons=reasons, **common)
 
     # Gate D: observed difference, women vs men only.
-    labels = {a.label: (a, na), b.label: (b, nb)}
+    labels = {a.label: na, b.label: nb}
     if set(labels) != {"women", "men"}:
         return Report(
-            verdict=INSUFFICIENT_EVIDENCE,
-            unit_basis=na.basis,
-            differences=differences,
-            missing=missing,
-            warnings=warnings,
+            verdict=PRICE_COMPARISON_ONLY,
             reasons=[
                 "Not a women vs men pair, so no gender verdict.",
                 f"{a.name}: {_money(na.unit_price)} per {na.basis}; "
                 f"{b.name}: {_money(nb.unit_price)} per {nb.basis}.",
             ],
+            **common,
         )
 
-    _, nw = labels["women"]
-    _, nm = labels["men"]
-    return _gender_report(nw, nm, differences, missing, warnings)
+    return _gender_report(labels["women"], labels["men"], common)
 
 
-def _gender_report(nw: Normalized, nm: Normalized, differences, missing, warnings) -> Report:
+def _gender_report(nw: Normalized, nm: Normalized, common: dict) -> Report:
     diff = nw.unit_price - nm.unit_price
     # Gate A guarantees price and quantity > 0, so nm.unit_price > 0.
     premium_pct = diff / nm.unit_price * 100 if nm.unit_price else Decimal("0")
@@ -134,13 +131,10 @@ def _gender_report(nw: Normalized, nm: Normalized, differences, missing, warning
     return Report(
         verdict=verdict,
         premium_pct=premium_pct,
-        unit_basis=nw.basis,
         savings_per_unit=diff,
         savings_at_size=diff * nw.basis_quantity,
-        differences=differences,
-        missing=missing,
-        warnings=warnings,
         reasons=reasons,
+        **common,
     )
 
 

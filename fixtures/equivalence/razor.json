@@ -1,0 +1,9 @@
+{
+  "comparable": "no",
+  "differences": [
+    {"attribute": "blade count", "a": "3", "b": "5", "material": true},
+    {"attribute": "handle color", "a": "pink", "b": "black", "material": false}
+  ],
+  "missing": [],
+  "note": "Blade count differs, which changes shaving performance."
+}
