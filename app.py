@@ -105,6 +105,11 @@ CSS = """
     margin-bottom: 1.25rem;
 }
 .st-key-discover_note { margin-top: 1.25rem; }
+.st-key-retailer_0, .st-key-retailer_1, .st-key-retailer_2 {
+    background: #FFFFFF; border: 1px solid #F6D3E1 !important;
+    border-radius: 16px !important; padding: 1rem !important;
+    box-shadow: 0 4px 16px rgba(216, 27, 96, 0.08);
+}
 .st-key-discover_note, .st-key-swaps_empty {
     border: 1px solid #E9B3C8; border-radius: 12px; padding: 1rem 1.25rem;
 }
@@ -505,9 +510,13 @@ def discover_view():
     if term not in by_term:
         st.caption("Pick a term to see where to search.")
         return
+    # Search links only: no product images, prices, or scraped data.
     cols = st.columns(len(by_term[term].links))
-    for col, link in zip(cols, by_term[term].links):
-        col.link_button(link.retailer, link.url, use_container_width=True)
+    for i, (col, link) in enumerate(zip(cols, by_term[term].links)):
+        with col.container(border=True, key=f"retailer_{i}"):
+            st.markdown(f"**{esc(link.retailer)}**")
+            st.caption(esc(f"Search for '{term}'"))
+            st.link_button("Open", link.url, use_container_width=True)
     with st.container(key="discover_note"):
         st.write("Found a candidate? Compare it.")
         st.button("Compare it", type="primary", on_click=go_compare, args=(term,))

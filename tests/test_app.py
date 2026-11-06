@@ -142,3 +142,16 @@ def test_every_demo_pair_has_card_photos():
 def test_hero_pink_caption():
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert any(c.value == "Yes, it's pink. That's the point." for c in at.caption)
+
+
+def test_discover_retailer_cards():
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    at.text_input(key="discover_query").set_value("women's razor").run()
+    at.session_state["pick_essence"] = "5 blade disposable razor"
+    at.run()
+    assert not at.exception
+    buttons = at.get("link_button")
+    assert [b.proto.label for b in buttons] == ["Open", "Open", "Open"]
+    assert [b.proto.url.split("/")[2] for b in buttons] == [
+        "www.google.com", "www.amazon.com", "www.target.com"]
+    assert sum("Search for '5 blade disposable razor'" == c.value for c in at.caption) == 3
