@@ -6,8 +6,7 @@ equivalent.
 
 Live app: https://pinktax-detective.streamlit.app
 
-Built at the Code with Claude: Women in AI Hackathon (Challenge 3, economic
-mobility).
+Built at the Code with Claude: Women in AI Hackathon (Challenge 3, economic mobility).
 
 ## The problem
 
