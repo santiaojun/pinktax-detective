@@ -162,3 +162,7 @@ Commit after each module (`M1: engine`, `M2: UI`, …). Never hardcode demo verd
   price only if visible. If the 3 manual pairs aren't end-to-end by T+110,
   photo stays off.
 - Feature freeze at T+150.
+- Approved scope: alternatives.py, savings.py, the three tabs (Compare,
+  Discover alternatives, My Savings), and the session savings metric.
+- Principle: look past the label. Essence terms come first; gendered swaps
+  are secondary.

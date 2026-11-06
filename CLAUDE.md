@@ -13,7 +13,7 @@ when asked.
 
 ## Public API the UI may call
 - verdict.compare(a, b, equivalence) -> Report
-- demo_pairs.PAIRS, demo_pairs.load_fixture(pair_id, kind)
+- demo_pairs.DEMO_PAIRS, demo_pairs.load_equivalence_fixture(pair_id)
 - equivalence.check(a, b) -> dict | None
 - alternatives.suggest(product) -> list
 - savings.add_swap(records, report, pair_key), savings.total(records)

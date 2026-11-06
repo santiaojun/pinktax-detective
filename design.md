@@ -18,12 +18,12 @@ Everything else stays quiet.
 ### Color (.streamlit/config.toml)
 | Role | Hex |
 |---|---|
-| primaryColor (buttons, active tab, toggles) | #D84F91 |
-| backgroundColor (page) | #FFF0F6 |
-| secondaryBackgroundColor (sidebar, inputs) | #FCE4EF |
-| textColor (body) | #432C3A |
+| primaryColor (buttons, active tab, toggles) | #B0285F |
+| backgroundColor (page) | #FFF7FA |
+| secondaryBackgroundColor (sidebar, inputs) | #FCE4EE |
+| textColor (body) | #2E1A24 |
 
-White text on #D84F91 is about 4.8:1, which passes WCAG AA for normal text.
+White text on #B0285F is about 6.3:1, which passes WCAG AA for normal text.
 Don't add other pinks. Status colors come from Streamlit's own st.success,
 st.warning, st.info, and st.error so they stay readable.
 
