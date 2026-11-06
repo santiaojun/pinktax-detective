@@ -76,11 +76,12 @@ CSS = """
 .st-key-pick_essence button,
 .st-key-pick_other button { border-radius: 999px; }
 .st-key-pick_other button { font-size: 0.85rem; }
-.st-key-card_a, .st-key-card_b {
-    border-radius: 12px; padding: 1.25rem; border: 1px solid;
+.st-key-search_card, .st-key-terms_card, .st-key-card_a, .st-key-card_b,
+.st-key-verdict_card, .st-key-swaps_card {
+    background: #FFFFFF; border: 1px solid #F6D3E1 !important;
+    border-radius: 20px !important; padding: 1.5rem !important;
+    box-shadow: 0 6px 24px rgba(216, 27, 96, 0.10);
 }
-.st-key-card_a { background: #FBEAF0; border-color: #E9B3C8; }
-.st-key-card_b { background: #E8F0F9; border-color: #A9C4E4; }
 .st-key-discover_note, .st-key-swaps_empty {
     border: 1px solid #E9B3C8; border-radius: 12px; padding: 1rem 1.25rem;
 }
@@ -398,7 +399,8 @@ def report_details(result: dict):
 def report_panel(result: dict):
     summary_tab, details_tab = st.tabs(["Summary", "Details"])
     with summary_tab:
-        report_summary(result)
+        with st.container(border=True, key="verdict_card"):
+            report_summary(result)
     with details_tab:
         report_details(result)
     st.caption(CAVEAT)
@@ -440,15 +442,16 @@ def discover_view():
         st.header("Same purpose. Better choices.")
         st.caption("Find what you need, not what marketing tells you.")
         st.caption("Yes, it's pink. That's the point.")
-    query = st.text_input(
-        "What do you want to buy?", key="discover_query",
-        placeholder="What do you want to buy? e.g. razor",
-        label_visibility="collapsed",
-    ).strip()
-    with st.container(key="examples", horizontal=True):
-        st.caption("Try:")
-        for i, example in enumerate(EXAMPLE_QUERIES):
-            st.button(example, key=f"example_{i}", on_click=set_query, args=(example,))
+    with st.container(border=True, key="search_card"):
+        query = st.text_input(
+            "What do you want to buy?", key="discover_query",
+            placeholder="What do you want to buy? e.g. razor",
+            label_visibility="collapsed",
+        ).strip()
+        with st.container(key="examples", horizontal=True):
+            st.caption("Try:")
+            for i, example in enumerate(EXAMPLE_QUERIES):
+                st.button(example, key=f"example_{i}", on_click=set_query, args=(example,))
     if not query:
         return
 
@@ -465,14 +468,15 @@ def discover_view():
         return
 
     by_term = {s.term: s for s in found.essence + found.other}
-    st.pills("Search for what it is", [s.term for s in found.essence],
-             key="pick_essence", format_func=esc,
-             on_change=clear_other, args=("pick_other",))
-    if found.other:
-        st.caption("Other options")
-        st.pills("Other options", [s.term for s in found.other],
-                 key="pick_other", format_func=esc, label_visibility="collapsed",
-                 on_change=clear_other, args=("pick_essence",))
+    with st.container(border=True, key="terms_card"):
+        st.pills("Search for what it is", [s.term for s in found.essence],
+                 key="pick_essence", format_func=esc,
+                 on_change=clear_other, args=("pick_other",))
+        if found.other:
+            st.caption("Other options")
+            st.pills("Other options", [s.term for s in found.other],
+                     key="pick_other", format_func=esc, label_visibility="collapsed",
+                     on_change=clear_other, args=("pick_essence",))
 
     term = st.session_state.get("pick_essence") or st.session_state.get("pick_other")
     if term not in by_term:
@@ -498,17 +502,18 @@ def savings_view():
     yearly = savings_mod.yearly_total(records)
     if yearly > 0:
         yearly_col.metric("Per year, estimated", money(yearly))
-    for record in records:
-        with st.container(border=True):
-            text, action = st.columns([4, 1])
-            text.write(f"**{esc(record.label)}**")
-            detail = f"{money(record.savings_at_size)} less at this size"
-            if record.yearly_savings is not None:
-                detail += f" · {money(record.yearly_savings)} a year"
-            detail += f" · saved {record.date_saved.isoformat()}"
-            text.caption(esc(detail))
-            action.button("Remove", key=f"remove_{record.pair_key}",
-                          on_click=remove_from_savings, args=(record.pair_key,))
+    with st.container(border=True, key="swaps_card"):
+        for record in records:
+            with st.container(border=True):
+                text, action = st.columns([4, 1])
+                text.write(f"**{esc(record.label)}**")
+                detail = f"{money(record.savings_at_size)} less at this size"
+                if record.yearly_savings is not None:
+                    detail += f" · {money(record.yearly_savings)} a year"
+                detail += f" · saved {record.date_saved.isoformat()}"
+                text.caption(esc(detail))
+                action.button("Remove", key=f"remove_{record.pair_key}",
+                              on_click=remove_from_savings, args=(record.pair_key,))
     st.caption("Potential savings, estimated. Not confirmed purchases.")
 
 
@@ -561,8 +566,8 @@ def main():
             st.badge(DEMO_LABEL, color="orange")
 
         left, right = st.columns(2)
-        product_form("a", left.container(key="card_a"))
-        product_form("b", right.container(key="card_b"))
+        product_form("a", left.container(border=True, key="card_a"))
+        product_form("b", right.container(border=True, key="card_b"))
 
         st.number_input("Times bought per year (optional)", min_value=0, step=1,
                         value=0, key="times_per_year")
