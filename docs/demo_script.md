@@ -69,7 +69,8 @@ storyline, same numbers, no API calls (see the end of this file).
 ## 1:15-1:30 Swap it
 
 - Click **Add to total savings**. The toast says "Saved to My Savings" and
-  the **Potential savings this session** metric goes to **$3.00**.
+  the savings hero at the top updates: **Your potential savings $3.00**,
+  **Swaps saved 1**, **Best swap $3.00**.
 - Click again: the button now reads **In total savings** and is disabled;
   the total stays **$3.00**. Open **My Savings** to show the one entry
   ($3.00, $36.00 a year).
