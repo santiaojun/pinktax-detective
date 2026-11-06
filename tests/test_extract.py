@@ -191,3 +191,15 @@ def test_demo_unknown_name_empty():
 
 def test_to_fields_accepts_dict_or_str():
     assert to_fields(VALID) == to_fields(json.dumps(VALID))
+
+
+def test_prompt_requires_product_type_first_in_attributes():
+    from pinktax.extract import SYSTEM
+
+    assert '"Function: <type>."' in SYSTEM
+    assert "even when the\n  type is also part of the name" in SYSTEM
+
+
+@pytest.mark.parametrize("pair_id", sorted(DEMO_PAIRS))
+def test_demo_fixture_attributes_start_with_function(pair_id):
+    assert load_extraction_fixture(pair_id)["attributes"].startswith("Function: ")

@@ -9,7 +9,13 @@ from pinktax.models import (
     PRICE_COMPARISON_ONLY,
     Product,
 )
-from pinktax.verdict import COULDNT_CHECK, compare, yearly_savings
+from pinktax.verdict import (
+    COULDNT_CHECK,
+    UNCLEAR,
+    UNCLEAR_SEE_MISSING,
+    compare,
+    yearly_savings,
+)
 
 EQUIVALENT = {"comparable": "yes", "differences": [], "missing": [], "note": "same"}
 
@@ -127,11 +133,25 @@ def test_gate_a_runs_before_gate_b():
 
 # Gate B
 
-def test_gate_b_none_or_unclear_insufficient():
-    for eq in (None, {"comparable": "unclear", "differences": [], "missing": []}):
-        r = compare(women(), men(), eq)
-        assert r.verdict == INSUFFICIENT_EVIDENCE
-        assert r.reasons == [COULDNT_CHECK]
+def test_gate_b_none_insufficient_couldnt_check():
+    r = compare(women(), men(), None)
+    assert r.verdict == INSUFFICIENT_EVIDENCE
+    assert r.reasons == [COULDNT_CHECK]
+
+
+def test_gate_b_unclear_says_couldnt_confirm():
+    r = compare(women(), men(), {"comparable": "unclear", "differences": [], "missing": []})
+    assert r.verdict == INSUFFICIENT_EVIDENCE
+    assert r.reasons == [UNCLEAR]
+    assert COULDNT_CHECK not in r.reasons
+
+
+def test_gate_b_unclear_points_to_missing():
+    eq = {"comparable": "unclear", "differences": [], "missing": ["product type for product B"]}
+    r = compare(women(), men(), eq)
+    assert r.verdict == INSUFFICIENT_EVIDENCE
+    assert r.reasons == [UNCLEAR_SEE_MISSING]
+    assert r.missing == ["product type for product B"]
 
 
 def test_gate_b_malformed_json_insufficient():

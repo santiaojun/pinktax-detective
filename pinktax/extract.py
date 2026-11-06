@@ -37,7 +37,11 @@ Return JSON with these fields; use "" for anything not clearly printed:
 - quantity: the net amount as a number, e.g. "16".
 - unit: the unit for that quantity, one of: ml, l, fl_oz, g, kg, oz, count.
 - pack_count: number of units in the pack if printed, e.g. "2"; else "".
-- attributes: function, active ingredients, key specs, scent, as printed.
+- attributes: always start with the product type and function as printed,
+  as "Function: <type>." (e.g. "Function: body cleanser."), even when the
+  type is also part of the name. Then active ingredients, key specs, and
+  scent, as printed. The name is never used to compare products, so the
+  type must appear here.
 - label: "women" or "men" only if the printed words say so (e.g. "for
   women", "men's"); "neutral" only if printed as unisex; else "unknown".
 - label_evidence: the exact printed words that justify label, or ""."""

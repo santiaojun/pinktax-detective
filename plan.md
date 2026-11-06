@@ -76,7 +76,7 @@ Streamlit page
 
 ## 3. Verdict gates
 - **Gate A, enough data:** both prices > 0, quantities > 0, units convertible to the same dimension. Otherwise `INSUFFICIENT_EVIDENCE`. A mismatch like ml vs g with no density is `NOT_COMPARABLE`.
-- **Gate B, equivalence:** any difference with `material: true` → `NOT_COMPARABLE`. `unclear`, invalid JSON, or an API failure → `INSUFFICIENT_EVIDENCE`, with the reason "couldn't check equivalence".
+- **Gate B, equivalence:** any difference with `material: true` → `NOT_COMPARABLE`. Invalid JSON or an API failure → `INSUFFICIENT_EVIDENCE`, with the reason "couldn't check equivalence". `unclear` → `INSUFFICIENT_EVIDENCE`, with the reason "Couldn't confirm these are the same product." (plus "See missing information." when Claude lists missing data).
 - **Gate C, context:** a different retailer, date, or sale status adds a warning but doesn't block.
 - **Gate D, observed difference:** only for a `women` vs `men` pair. If the women's per-unit price is higher → `POTENTIAL_PREMIUM`, otherwise `NO_OBSERVED_PREMIUM`. A `neutral` or `unknown` label gets a plain price comparison only, with no gender verdict.
 

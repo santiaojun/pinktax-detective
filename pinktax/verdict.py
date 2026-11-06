@@ -19,7 +19,9 @@ from pinktax.models import (
 )
 from pinktax.normalize import Normalized, normalize
 
-COULDNT_CHECK = "couldn't check equivalence"
+COULDNT_CHECK = "couldn't check equivalence"  # no valid answer from the check
+UNCLEAR = "Couldn't confirm these are the same product."  # the check ran, said "unclear"
+UNCLEAR_SEE_MISSING = UNCLEAR + " See missing information."
 
 
 def _money(value: Decimal) -> str:
@@ -59,7 +61,8 @@ def _check_equivalence(equivalence) -> tuple[Optional[str], list, list[str], lis
 
     missing = [str(m) for m in missing]
     if comparable == "unclear":
-        return INSUFFICIENT_EVIDENCE, differences, missing, [COULDNT_CHECK]
+        reason = UNCLEAR_SEE_MISSING if missing else UNCLEAR
+        return INSUFFICIENT_EVIDENCE, differences, missing, [reason]
 
     material = [d for d in differences if d.get("material") is True]
     if comparable == "no" or material:
