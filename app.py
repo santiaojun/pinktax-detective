@@ -119,6 +119,14 @@ CSS = """
     display: flex; align-items: center; justify-content: center; background: #FFFFFF;
 }
 .st-key-card_a img, .st-key-card_b img { border-radius: 8px; }
+[data-testid="stTabs"] [role="tablist"] {
+    background: #FCE4EC; border-radius: 999px; padding: 4px; gap: 4px; width: fit-content;
+}
+[data-testid="stTabs"] [role="tablist"]::after { display: none; }
+[data-testid="stTab"] { border-radius: 999px; padding: 0 1.1rem; }
+[data-testid="stTab"] .react-aria-SelectionIndicator { display: none !important; }
+[data-testid="stTab"][data-selected] { background: #D81B60; color: #FFFFFF; }
+[data-testid="stTab"][data-selected] p { color: #FFFFFF; font-weight: 600; }
 </style>
 """
 
