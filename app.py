@@ -102,7 +102,9 @@ CSS = """
     background: #FFFFFF; border: 1px solid #F6D3E1 !important;
     border-radius: 20px !important; padding: 1.5rem !important;
     box-shadow: 0 6px 24px rgba(216, 27, 96, 0.10);
+    margin-bottom: 1.25rem;
 }
+.st-key-discover_note { margin-top: 1.25rem; }
 .st-key-discover_note, .st-key-swaps_empty {
     border: 1px solid #E9B3C8; border-radius: 12px; padding: 1rem 1.25rem;
 }
