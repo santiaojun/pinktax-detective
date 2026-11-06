@@ -52,9 +52,5 @@ class Report:
     reasons: list[str] = field(default_factory=list)
 
 
-def compare(a: Product, b: Product, equivalence) -> Report:
-    """Run gates A-D on two products and return a Report.
-
-    `equivalence` is the validated Claude equivalence result (or None on failure).
-    """
-    raise NotImplementedError
+# compare(a: Product, b: Product, equivalence: dict | None) -> Report
+# lives in pinktax/verdict.py.
