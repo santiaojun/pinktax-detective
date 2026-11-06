@@ -5,7 +5,7 @@ import anthropic
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
-from demo_pairs import DEMO_LABEL, DEMO_PAIRS, load_equivalence_fixture
+from demo_pairs import DEMO_IMAGES, DEMO_LABEL, DEMO_PAIRS, load_equivalence_fixture
 from pinktax import equivalence, extract
 from pinktax.gendered import strip_gendered
 from pinktax.models import (
@@ -57,8 +57,9 @@ EXAMPLE_QUERIES = ["women's razor", "women's sun protection jacket", "jewelry or
 DEMO_PHOTOS = Path(__file__).parent / "assets" / "demo_photos"
 PHOTO_TYPES = ["png", "jpg", "jpeg", "gif", "webp"]
 PHOTO_ERROR = "Couldn't read this photo. Fill in the fields by hand."
-DEMO_PHOTO_ERROR = ("Demo mode has a saved reading only for Product A of a loaded demo pair. "
-                    "Turn off Demo mode to read this photo with Claude.")
+DEMO_PHOTO_ERROR = ("Demo mode has saved readings only for the demo label images "
+                    "(pink_label.png, blue_label.png) and for Product A of a loaded demo "
+                    "pair. Turn off Demo mode to read this photo with Claude.")
 
 # The only unsafe_allow_html string in the app: a constant, never interpolated.
 CSS = """
@@ -215,10 +216,15 @@ def read_photo(side: str):
     if upload is None:
         return
     demo = st.session_state.demo_mode
+    # Demo readings: the synthetic label images by file name, else product A of
+    # the loaded demo pair.
+    demo_name = Path(upload.name).stem
+    if demo_name not in DEMO_IMAGES:
+        demo_name = st.session_state.demo_pair_id if side == "a" else None
     fields = extract.from_image(
         upload.getvalue(), upload.type,
         client=None if demo else anthropic_client(),
-        demo=demo, demo_name=st.session_state.demo_pair_id if side == "a" else None,
+        demo=demo, demo_name=demo_name,
     )
     if not fields:
         st.session_state[f"{side}_photo_error"] = DEMO_PHOTO_ERROR if demo else PHOTO_ERROR

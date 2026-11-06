@@ -71,6 +71,23 @@ runs without an API key. For live checks, add your key to
 ANTHROPIC_API_KEY = "your-key-here"
 ```
 
+## Try the demo
+
+With Demo mode on:
+
+1. **Discover:** click the "women's razor" example, pick "5 blade disposable
+   razor", and see the store links. "Compare it" switches to Compare.
+2. **Compare:** load the Body wash pair (potential premium), Disposable razors
+   (not comparable: 3 vs. 5 blades), and Deodorant (insufficient evidence:
+   no active ingredient listed). Each card shows a synthetic demo label.
+3. **Report:** the Summary tab has the verdict, per-unit prices, and savings;
+   Details has the blind equivalence check and every attribute difference.
+   "Add to total savings" saves a premium pair.
+4. **My Savings:** saved swaps, the total, and the yearly estimate.
+5. **Photos:** turn on Photo upload and upload `fixtures/demo_images/pink_label.png`
+   to Product A and `blue_label.png` to Product B: the same product, only the
+   color differs.
+
 ## Tests
 
 ```bash
