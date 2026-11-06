@@ -1,11 +1,13 @@
 from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
 
 import anthropic
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
 from demo_pairs import DEMO_LABEL, DEMO_PAIRS, load_equivalence_fixture
-from pinktax import equivalence
+from pinktax import equivalence, extract
+from pinktax.gendered import strip_gendered
 from pinktax.models import (
     INSUFFICIENT_EVIDENCE,
     LABELS,
@@ -51,6 +53,12 @@ NO_SAVING = "No saving to add for this result."
 MD_SPECIAL = "\\`*_{}[]()<>#+-.!|$~"
 VIEWS = ["Discover", "Compare", "My Savings"]
 EMPTY_SAVINGS = "No swaps yet. Compare a pair to find your first one."
+EXAMPLE_QUERIES = ["women's razor", "women's sun protection jacket", "jewelry organizer"]
+DEMO_PHOTOS = Path(__file__).parent / "assets" / "demo_photos"
+PHOTO_TYPES = ["png", "jpg", "jpeg", "gif", "webp"]
+PHOTO_ERROR = "Couldn't read this photo. Fill in the fields by hand."
+DEMO_PHOTO_ERROR = ("Demo mode has a saved reading only for Product A of a loaded demo pair. "
+                    "Turn off Demo mode to read this photo with Claude.")
 
 # The only unsafe_allow_html string in the app: a constant, never interpolated.
 CSS = """
@@ -71,6 +79,12 @@ CSS = """
 .st-key-discover_note, .st-key-swaps_empty {
     border: 1px solid #E9B3C8; border-radius: 12px; padding: 1rem 1.25rem;
 }
+.st-key-examples button { border-radius: 999px; font-size: 0.85rem; }
+.st-key-a_nophoto, .st-key-b_nophoto {
+    width: 150px; height: 188px; border: 1px dashed #CFCBC4; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; background: #FFFFFF;
+}
+.st-key-card_a img, .st-key-card_b img { border-radius: 8px; }
 </style>
 """
 
@@ -89,6 +103,13 @@ def has_api_key() -> bool:
         return "ANTHROPIC_API_KEY" in st.secrets
     except StreamlitSecretNotFoundError:
         return False
+
+
+def anthropic_client():
+    """Client built from st.secrets, or None when no key is configured."""
+    if not has_api_key():
+        return None
+    return anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 
 
 def live_equivalence(a: Product, b: Product):
@@ -187,12 +208,58 @@ def run_compare():
     }
 
 
+def read_photo(side: str):
+    """Uploader callback: fill this card's fields from a label photo (extract.py)."""
+    st.session_state[f"{side}_photo_error"] = None
+    upload = st.session_state.get(f"{side}_photo")
+    if upload is None:
+        return
+    demo = st.session_state.demo_mode
+    fields = extract.from_image(
+        upload.getvalue(), upload.type,
+        client=None if demo else anthropic_client(),
+        demo=demo, demo_name=st.session_state.demo_pair_id if side == "a" else None,
+    )
+    if not fields:
+        st.session_state[f"{side}_photo_error"] = DEMO_PHOTO_ERROR if demo else PHOTO_ERROR
+        return
+    for field, value in fields.items():
+        if field == "label" and value == "unknown":
+            continue  # no label evidence on the photo: keep the shopper's choice
+        st.session_state[f"{side}_{field}"] = str(value) if field in ("price", "quantity") else value
+    st.session_state.result = None
+
+
 # --- rendering ---
+
+def card_photo(side: str):
+    """Uploaded photo, else the loaded demo pair's synthetic label, else a placeholder."""
+    upload = st.session_state.get(f"{side}_photo")
+    pair_id = st.session_state.demo_pair_id
+    demo_photo = DEMO_PHOTOS / f"{pair_id}_{side}.png" if pair_id else None
+    if upload is not None:
+        st.image(upload.getvalue(), width=150)
+    elif demo_photo is not None and demo_photo.exists():
+        st.image(str(demo_photo), width=150)
+    else:
+        with st.container(key=f"{side}_nophoto"):
+            st.caption("No photo yet")
+
 
 def product_form(side: str, container):
     errors = st.session_state.errors.get(side, {})
     with container:
-        st.subheader(SIDES[side])
+        photo, heading = st.columns([1, 2], vertical_alignment="center")
+        with photo:
+            card_photo(side)
+        with heading:
+            st.subheader(SIDES[side])
+            st.caption(f"Marketed to: {st.session_state[f'{side}_label']}")
+        if st.session_state.photo_mode:
+            st.file_uploader("Label photo", type=PHOTO_TYPES, key=f"{side}_photo",
+                             on_change=read_photo, args=(side,))
+            if st.session_state.get(f"{side}_photo_error"):
+                st.error(st.session_state[f"{side}_photo_error"])
         st.text_input("Name", key=f"{side}_name")
         st.text_input("Price (USD)", key=f"{side}_price")
         if "price" in errors:
@@ -348,8 +415,13 @@ def cached_suggest(query: str, demo: bool):
     """suggest() once per (query, demo): reruns must not call Claude again."""
     cache = st.session_state.setdefault("alt_cache", {})
     if (query, demo) not in cache:
-        cache[(query, demo)] = suggest(query, demo=demo)
+        cache[(query, demo)] = suggest(
+            query, client=None if demo else anthropic_client(), demo=demo)
     return cache[(query, demo)]
+
+
+def set_query(text: str):
+    st.session_state.discover_query = text
 
 
 def discover_view():
@@ -361,10 +433,18 @@ def discover_view():
         placeholder="What do you want to buy? e.g. razor",
         label_visibility="collapsed",
     ).strip()
-    if st.session_state.demo_mode:
-        st.caption("Demo mode searches: " + ", ".join(esc(q) for q in DEMO_QUERIES) + ".")
+    with st.container(key="examples", horizontal=True):
+        st.caption("Try:")
+        for i, example in enumerate(EXAMPLE_QUERIES):
+            st.button(example, key=f"example_{i}", on_click=set_query, args=(example,))
     if not query:
         return
+
+    neutral = strip_gendered(query)
+    removed = [w for w in query.split() if w.casefold() not in neutral.casefold().split()]
+    if removed and neutral:
+        st.caption(esc(f"Removed from your search: {', '.join(removed)} · "
+                       f"Neutral search: {neutral}"))
 
     with st.spinner("Finding search terms..."):
         found = cached_suggest(query, st.session_state.demo_mode)
@@ -432,6 +512,8 @@ def main():
                        "key it can't, and Compare returns insufficient evidence.")
         elif not st.session_state.demo_pair_id:
             st.caption("Demo fixtures apply only after loading a demo pair.")
+        st.toggle("Photo upload", value=False, key="photo_mode",
+                  help="Read a product label photo to fill that card's fields.")
         st.caption(f"API key configured: {has_api_key()}")
 
     st.markdown(CSS, unsafe_allow_html=True)
