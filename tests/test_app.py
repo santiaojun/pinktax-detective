@@ -128,3 +128,12 @@ def test_corrupt_upload_does_not_crash_page():
     at.file_uploader(key="a_photo").set_value(("label.png", b"\x89PNG broken", "image/png")).run()
     assert not at.exception
     assert any(c.value == "Can't preview this file" for c in at.caption)
+
+
+def test_every_demo_pair_has_card_photos():
+    from demo_pairs import DEMO_PAIRS
+
+    photos = Path(APP).parent / "assets" / "demo_photos"
+    for pair_id in DEMO_PAIRS:
+        for side in ("a", "b"):
+            assert (photos / f"{pair_id}_{side}.png").is_file(), f"{pair_id}_{side}.png"
