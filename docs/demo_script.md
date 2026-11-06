@@ -16,6 +16,9 @@ storyline, same numbers, no API calls (see the end of this file).
 
 ## 0:00-0:20 Problem
 
+> "We wrapped it in pink on purpose: it looks like every product marketed to
+> women. Underneath, it judges products blind."
+
 > "Products marketed to women often cost more. New York City's Department of
 > Consumer Affairs found in 2015 that women's products cost 7% more on
 > average. But a 2023 *Marketing Science* study by Moshary, Tuchman and
