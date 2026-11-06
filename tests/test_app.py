@@ -137,3 +137,8 @@ def test_every_demo_pair_has_card_photos():
     for pair_id in DEMO_PAIRS:
         for side in ("a", "b"):
             assert (photos / f"{pair_id}_{side}.png").is_file(), f"{pair_id}_{side}.png"
+
+
+def test_hero_pink_caption():
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    assert any(c.value == "Yes, it's pink. That's the point." for c in at.caption)

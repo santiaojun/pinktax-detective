@@ -436,6 +436,7 @@ def discover_view():
     with st.container(key="hero"):
         st.header("Same purpose. Better choices.")
         st.caption("Find what you need, not what marketing tells you.")
+        st.caption("Yes, it's pink. That's the point.")
     query = st.text_input(
         "What do you want to buy?", key="discover_query",
         placeholder="What do you want to buy? e.g. razor",
