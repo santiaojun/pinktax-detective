@@ -73,20 +73,24 @@ ANTHROPIC_API_KEY = "your-key-here"
 
 ## Try the demo
 
-With Demo mode on:
+Everything below works with Demo mode on (no API key). The full 2-minute
+script with exact numbers is in [docs/demo_script.md](docs/demo_script.md).
 
 1. **Discover:** click the "women's razor" example, pick "5 blade disposable
    razor", and see the store links. "Compare it" switches to Compare.
-2. **Compare:** load the Body wash pair (potential premium), Disposable razors
-   (not comparable: 3 vs. 5 blades), and Deodorant (insufficient evidence:
-   no active ingredient listed). Each card shows a synthetic demo label.
-3. **Report:** the Summary tab has the verdict, per-unit prices, and savings;
+2. **Compare, the main story:** click **Pink vs blue label**. Same Everyday
+   Body Wash, only the label color differs: women's $12.99 vs men's $9.99
+   (DEMO DATA), so **$2.75 vs $2.11 per 100 ml**, a 30% potential premium,
+   **$3.00 less at this size**. Optionally turn on Photo upload and upload
+   `fixtures/demo_images/pink_label.png` and `blue_label.png`: the fields fill
+   from the label, and the price stays yours to enter.
+3. **The other verdicts:** Body wash (potential premium), Disposable razors
+   (not comparable: 3 vs. 5 blades), and Deodorant (insufficient evidence: no
+   active ingredient listed). Each card shows a synthetic demo label.
+4. **Report:** the Summary tab has the verdict, per-unit prices, and savings;
    Details has the blind equivalence check and every attribute difference.
-   "Add to total savings" saves a premium pair.
-4. **My Savings:** saved swaps, the total, and the yearly estimate.
-5. **Photos:** turn on Photo upload and upload `fixtures/demo_images/pink_label.png`
-   to Product A and `blue_label.png` to Product B: the same product, only the
-   color differs.
+   "Add to total savings" saves a premium pair, once.
+5. **My Savings:** saved swaps, the total, and the yearly estimate.
 
 ## Tests
 
@@ -94,8 +98,9 @@ With Demo mode on:
 pytest
 ```
 
-170 tests cover unit conversion, the verdict gates, savings, Claude output
-validation, prompt blindness, and the UI flows. Tests never call the real
+181 tests cover unit conversion, the verdict gates, savings, Claude output
+validation, prompt blindness, and the UI flows, including the full Pink vs
+blue storyline offline. Tests never call the real
 API; the client is mocked.
 
 ## Limits
