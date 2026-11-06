@@ -1,9 +1,11 @@
 from decimal import ROUND_HALF_UP, Decimal
 
+import anthropic
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
 from demo_pairs import DEMO_LABEL, DEMO_PAIRS, load_equivalence_fixture
+from pinktax import equivalence
 from pinktax.models import (
     INSUFFICIENT_EVIDENCE,
     LABELS,
@@ -54,6 +56,22 @@ def has_api_key() -> bool:
         return "ANTHROPIC_API_KEY" in st.secrets
     except StreamlitSecretNotFoundError:
         return False
+
+
+def live_equivalence(a: Product, b: Product):
+    """Claude's blind equivalence check, cached per input hash; None if unavailable."""
+    if not has_api_key():
+        return None
+    model = st.secrets.get("ANTHROPIC_MODEL")
+    key = equivalence.cache_key(a, b, model)
+    cache = st.session_state.setdefault("equivalence_cache", {})
+    if key not in cache:
+        client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+        result = equivalence.check(a, b, client=client, model=model)
+        if result is None:
+            return None  # not cached, so Compare can retry
+        cache[key] = result
+    return cache[key]
 
 
 # --- state + callbacks ---
@@ -120,13 +138,15 @@ def run_compare():
         return
 
     pair_id = st.session_state.demo_pair_id
-    equivalence = None
     if st.session_state.demo_mode and pair_id:
-        equivalence = load_equivalence_fixture(pair_id)
-    # Demo mode off: the live Claude check arrives in M3.
+        equivalence_result = load_equivalence_fixture(pair_id)
+    elif not st.session_state.demo_mode:
+        equivalence_result = live_equivalence(a, b)
+    else:
+        equivalence_result = None
 
     st.session_state.result = {
-        "report": compare(a, b, equivalence),
+        "report": compare(a, b, equivalence_result),
         "names": {"a": a.name, "b": b.name},
         "demo": pair_id is not None,
     }
@@ -217,8 +237,8 @@ def main():
         st.toggle("Demo mode", value=True, key="demo_mode",
                   help="Use saved equivalence JSON for demo pairs instead of calling Claude.")
         if not st.session_state.demo_mode:
-            st.caption("The live Claude check isn't wired yet, so equivalence "
-                       "can't be checked and Compare returns insufficient evidence.")
+            st.caption("Compare asks Claude to check equivalence. Without an API "
+                       "key it can't, and Compare returns insufficient evidence.")
         elif not st.session_state.demo_pair_id:
             st.caption("Demo fixtures apply only after loading a demo pair.")
         st.caption(f"API key configured: {has_api_key()}")

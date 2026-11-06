@@ -62,3 +62,24 @@ def test_demo_mode_off_is_insufficient_evidence():
     at.button(key="demo_body_wash").click().run()
     click(at, "Compare")
     assert at.session_state.result["report"].verdict == INSUFFICIENT_EVIDENCE
+
+
+def test_demo_mode_off_calls_check_once_and_caches(monkeypatch):
+    from pinktax import equivalence
+
+    calls = []
+
+    def fake_check(a, b, *, client=None, model=None):
+        calls.append((a.name, b.name))
+        return {"comparable": "yes", "differences": [], "missing": [], "note": ""}
+
+    monkeypatch.setattr(equivalence, "check", fake_check)
+    at = AppTest.from_file(APP)
+    at.secrets["ANTHROPIC_API_KEY"] = "test-key"
+    at.run()
+    at.toggle(key="demo_mode").set_value(False).run()
+    at.button(key="demo_body_wash").click().run()
+    click(at, "Compare")
+    click(at, "Compare")
+    assert calls == [("Petal Glow Body Wash", "Ridge Body Wash")]
+    assert at.session_state.result["report"].verdict == POTENTIAL_PREMIUM
