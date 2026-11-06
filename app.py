@@ -16,8 +16,14 @@ from pinktax.models import (
     UNITS,
     Product,
 )
+from pinktax.alternatives import DEMO_QUERIES, suggest
 from pinktax.normalize import parse_positive
 from pinktax.verdict import compare, yearly_savings
+
+try:
+    from pinktax import savings as savings_mod
+except ImportError:  # savings.py hasn't landed yet
+    savings_mod = None
 
 SIDES = {"a": "Product A", "b": "Product B"}
 BLANK = {
@@ -40,6 +46,30 @@ VERDICT_DISPLAY = {
 }
 CAVEAT = "One pair is not evidence of a market-wide pattern."
 MD_SPECIAL = "\\`*_{}[]()<>#+-.!|$~"
+VIEWS = ["Discover", "Compare", "My Savings"]
+EMPTY_SAVINGS = "No swaps yet. Compare a pair to find your first one."
+
+# The only unsafe_allow_html string in the app: a constant, never interpolated.
+CSS = """
+<style>
+.st-key-hero { text-align: center; padding: 1.5rem 0 0.5rem; }
+.st-key-hero h2 { padding-bottom: 0.25rem; }
+.st-key-discover_query { max-width: 640px; margin: 0 auto; }
+.st-key-discover_query [data-baseweb="input"],
+.st-key-discover_query input { border-radius: 999px; }
+.st-key-pick_essence button,
+.st-key-pick_other button { border-radius: 999px; }
+.st-key-pick_other button { font-size: 0.85rem; }
+.st-key-card_a, .st-key-card_b {
+    border-radius: 12px; padding: 1.25rem; border: 1px solid;
+}
+.st-key-card_a { background: #FBEAF0; border-color: #E9B3C8; }
+.st-key-card_b { background: #E8F0F9; border-color: #A9C4E4; }
+.st-key-discover_note, .st-key-swaps_empty {
+    border: 1px solid #E9B3C8; border-radius: 12px; padding: 1rem 1.25rem;
+}
+</style>
+"""
 
 
 def esc(text) -> str:
@@ -229,6 +259,77 @@ def report_panel(result: dict):
     st.caption(CAVEAT)
 
 
+def go_compare(term):
+    """on_click callback: remember the term and switch to the Compare tab."""
+    st.session_state["compare_prefill"] = term
+    st.session_state["view"] = "Compare"
+
+
+def clear_other(other_key: str):
+    st.session_state[other_key] = None
+
+
+def cached_suggest(query: str, demo: bool):
+    """suggest() once per (query, demo): reruns must not call Claude again."""
+    cache = st.session_state.setdefault("alt_cache", {})
+    if (query, demo) not in cache:
+        cache[(query, demo)] = suggest(query, demo=demo)
+    return cache[(query, demo)]
+
+
+def discover_view():
+    with st.container(key="hero"):
+        st.header("Same purpose. Better choices.")
+        st.caption("Find what you need, not what marketing tells you.")
+    query = st.text_input(
+        "What do you want to buy?", key="discover_query",
+        placeholder="What do you want to buy? e.g. razor",
+        label_visibility="collapsed",
+    ).strip()
+    if st.session_state.demo_mode:
+        st.caption("Demo mode searches: " + ", ".join(esc(q) for q in DEMO_QUERIES) + ".")
+    if not query:
+        return
+
+    with st.spinner("Finding search terms..."):
+        found = cached_suggest(query, st.session_state.demo_mode)
+    if found.empty:
+        st.info("No search terms for this product yet. Try adding more attributes.")
+        return
+
+    by_term = {s.term: s for s in found.essence + found.other}
+    st.pills("Search for what it is", [s.term for s in found.essence],
+             key="pick_essence", format_func=esc,
+             on_change=clear_other, args=("pick_other",))
+    if found.other:
+        st.caption("Other options")
+        st.pills("Other options", [s.term for s in found.other],
+                 key="pick_other", format_func=esc, label_visibility="collapsed",
+                 on_change=clear_other, args=("pick_essence",))
+
+    term = st.session_state.get("pick_essence") or st.session_state.get("pick_other")
+    if term not in by_term:
+        st.caption("Pick a term to see where to search.")
+        return
+    cols = st.columns(len(by_term[term].links))
+    for col, link in zip(cols, by_term[term].links):
+        col.link_button(link.retailer, link.url, use_container_width=True)
+    with st.container(key="discover_note"):
+        st.write("Found a candidate? Compare it.")
+        st.button("Compare it", type="primary", on_click=go_compare, args=(term,))
+
+
+def savings_view():
+    st.header("My Savings")
+    records = st.session_state.get("swaps", [])
+    if savings_mod is None or not records:
+        with st.container(key="swaps_empty"):
+            st.write(EMPTY_SAVINGS)
+        return
+    st.metric("Potential savings, estimated", money(savings_mod.total(records)))
+    st.caption("Potential savings, estimated. Not confirmed purchases.")
+
+
 def main():
     st.set_page_config(page_title="PinkTax Detective", page_icon=":mag:", layout="wide")
     init_state()
@@ -243,31 +344,42 @@ def main():
             st.caption("Demo fixtures apply only after loading a demo pair.")
         st.caption(f"API key configured: {has_api_key()}")
 
+    st.markdown(CSS, unsafe_allow_html=True)
     st.title("PinkTax Detective")
-    st.write("Compare two products marketed to women and men, check they're really "
-             "equivalent, and see the price per unit.")
+    discover_tab, compare_tab, savings_tab = st.tabs(
+        VIEWS, key="view", on_change="rerun")
 
-    st.write("Load a demo pair:")
-    cols = st.columns(len(DEMO_PAIRS) + 1)
-    for col, (pair_id, pair) in zip(cols, DEMO_PAIRS.items()):
-        col.button(pair["title"], key=f"demo_{pair_id}", on_click=load_demo,
-                   args=(pair_id,), use_container_width=True)
-    cols[-1].button("Clear", on_click=clear_form, use_container_width=True)
-    if st.session_state.demo_pair_id:
-        st.badge(DEMO_LABEL, color="orange")
+    with discover_tab:
+        discover_view()
 
-    left, right = st.columns(2)
-    product_form("a", left)
-    product_form("b", right)
+    with compare_tab:
+        st.write("Compare two products marketed to women and men, check they're really "
+                 "equivalent, and see the price per unit.")
 
-    st.number_input("Times bought per year (optional)", min_value=0, step=1,
-                    value=0, key="times_per_year")
-    st.button("Compare", type="primary", on_click=run_compare)
+        st.write("Load a demo pair:")
+        cols = st.columns(len(DEMO_PAIRS) + 1)
+        for col, (pair_id, pair) in zip(cols, DEMO_PAIRS.items()):
+            col.button(pair["title"], key=f"demo_{pair_id}", on_click=load_demo,
+                       args=(pair_id,), use_container_width=True)
+        cols[-1].button("Clear", on_click=clear_form, use_container_width=True)
+        if st.session_state.demo_pair_id:
+            st.badge(DEMO_LABEL, color="orange")
 
-    if st.session_state.errors:
-        st.error("Fix the highlighted fields, then compare again.")
-    if st.session_state.result:
-        report_panel(st.session_state.result)
+        left, right = st.columns(2)
+        product_form("a", left.container(key="card_a"))
+        product_form("b", right.container(key="card_b"))
+
+        st.number_input("Times bought per year (optional)", min_value=0, step=1,
+                        value=0, key="times_per_year")
+        st.button("Compare", type="primary", on_click=run_compare)
+
+        if st.session_state.errors:
+            st.error("Fix the highlighted fields, then compare again.")
+        if st.session_state.result:
+            report_panel(st.session_state.result)
+
+    with savings_tab:
+        savings_view()
 
 
 main()

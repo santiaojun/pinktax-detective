@@ -8,7 +8,7 @@ A shopper puts two products side by side and gets an honest answer: is this
 the same product sold at a higher price to women, or not? Then she finds
 cheaper equivalents and sees what she could save.
 
-Demo order: Compare -> Discover alternatives -> My Savings.
+Demo order: Discover -> Compare -> My Savings.
 
 The one memorable element is the verdict card with its savings number.
 Everything else stays quiet.
@@ -50,12 +50,21 @@ Same purpose. Better choices.
 Compare two products and see if the one marketed to women really costs more.
 [ Potential savings this session: $X.XX ]          <- st.metric, top right
 
-[ Compare ] [ Discover alternatives ] [ My Savings ]   <- st.tabs
+[ Discover ] [ Compare ] [ My Savings ]   <- st.tabs
 
 Sidebar: Demo mode toggle, Photo upload toggle, "DEMO DATA" note
 ```
 
-### Tab 1: Compare
+### Tab 1: Discover (search first)
+- Centered hero "Same purpose. Better choices." and a search input.
+- Essence terms as pills under "Search for what it is"; other terms smaller
+  below. Selecting a term shows one link per retailer (built by
+  pinktax/alternatives.py).
+- Note under the links: "Found a candidate? Compare it." with a button that
+  switches to the Compare tab.
+- No product images.
+
+### Tab 2: Compare
 ```
 Try a demo pair:  [Body wash] [Razor] [Deodorant]
 
@@ -79,13 +88,6 @@ Times bought per year (optional)
 | One pair is not evidence of a market-wide pattern. |
 +----------------------------------------------------+
 ```
-
-### Tab 2: Discover alternatives
-- Uses the last compared product, or a text box if there isn't one.
-- Shows 3 search terms as buttons or a horizontal row, each with links to
-  Google Shopping, Amazon, and Target (built by pinktax/alternatives.py).
-- Note under the links: "Found a candidate? Enter it as Product B and compare
-  again."
 
 ### Tab 3: My Savings
 - st.metric: total potential savings, and yearly if set.
