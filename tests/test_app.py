@@ -155,3 +155,24 @@ def test_discover_retailer_cards():
     assert [b.proto.url.split("/")[2] for b in buttons] == [
         "www.google.com", "www.amazon.com", "www.target.com"]
     assert sum("Search for '5 blade disposable razor'" == c.value for c in at.caption) == 3
+
+
+def test_savings_hero_computed_from_session_swaps():
+    from decimal import Decimal
+
+    from pinktax.models import Report
+    from pinktax.savings import add_swap
+
+    def hero(at):
+        return {m.label: m.value for m in at.metric
+                if m.label in ("Your potential savings", "Swaps saved", "Best swap")}
+
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    assert hero(at) == {"Your potential savings": "$0.00", "Swaps saved": "0", "Best swap": "$0.00"}
+    records = []
+    for key, amount in (("k1", "3.00"), ("k2", "2.16")):
+        report = Report(verdict=POTENTIAL_PREMIUM, savings_at_size=Decimal(amount))
+        records = add_swap(records, report, key, key)
+    at.session_state["swaps"] = records
+    at.run()
+    assert hero(at) == {"Your potential savings": "$5.16", "Swaps saved": "2", "Best swap": "$3.00"}

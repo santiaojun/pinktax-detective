@@ -69,8 +69,15 @@ CSS = """
 .st-key-hero { text-align: center; padding: 1.5rem 0 0.5rem; }
 .st-key-hero h2 { padding-bottom: 0.25rem; font-size: 2.5rem; }
 .st-key-wordmark p { font-size: 1rem; font-weight: 700; color: #D81B60; letter-spacing: 0.02em; margin: 0.5rem 0 0; }
-.st-key-session_metric { background: #FFFFFF; border-radius: 16px; padding: 0.5rem 1rem; box-shadow: 0 4px 16px rgba(216, 27, 96, 0.12); }
-.st-key-session_metric [data-testid="stMetricValue"] { font-size: 1.5rem; }
+.st-key-savings_hero {
+    background: #B0285F; border-radius: 20px; padding: 0.9rem 1.5rem;
+    max-height: 180px; overflow: hidden; margin-bottom: 1rem;
+    box-shadow: 0 6px 24px rgba(176, 40, 95, 0.25);
+}
+.st-key-savings_hero [data-testid="stMetricLabel"] p,
+.st-key-savings_hero [data-testid="stMetricValue"] { color: #FFFFFF; }
+.st-key-savings_hero [data-testid="stMetricValue"] { font-size: 1.35rem; }
+.st-key-hero_total [data-testid="stMetricValue"] { font-size: 2.4rem; font-weight: 700; }
 .st-key-discover_query { max-width: 640px; margin: 0 auto; }
 .st-key-discover_query [data-baseweb="input"],
 .st-key-discover_query input { border-radius: 999px; }
@@ -531,6 +538,17 @@ def discover_view():
         st.button("Compare it", type="primary", on_click=go_compare, args=(term,))
 
 
+def savings_hero(records: list):
+    """Compact top card; every number is computed from the session's swaps."""
+    best = max((r.savings_at_size for r in records), default=Decimal("0"))
+    with st.container(key="savings_hero"):
+        total_col, count_col, best_col = st.columns([2, 1, 1])
+        with total_col.container(key="hero_total"):
+            st.metric("Your potential savings", money(savings_mod.total(records)))
+        count_col.metric("Swaps saved", str(len(records)))
+        best_col.metric("Best swap", money(best))
+
+
 def savings_view():
     st.header("My Savings")
     records = st.session_state.swaps
@@ -576,13 +594,10 @@ def main():
         st.caption(f"API key configured: {has_api_key()}")
 
     st.markdown(CSS, unsafe_allow_html=True)
-    title_col, metric_col = st.columns([3, 1])
-    with title_col.container(key="wordmark"):
+    with st.container(key="wordmark"):
         st.markdown("**PinkTax Detective**")
     if savings_mod is not None:
-        with metric_col.container(key="session_metric"):
-            st.metric("Potential savings this session",
-                      money(savings_mod.total(st.session_state.swaps)))
+        savings_hero(st.session_state.swaps)
     discover_tab, compare_tab, savings_tab = st.tabs(
         VIEWS, key="view", on_change="rerun")
 
