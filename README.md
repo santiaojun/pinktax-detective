@@ -8,24 +8,37 @@ Live app: https://pinktax-detective.streamlit.app
 
 Built at the Code with Claude: Women in AI Hackathon (Challenge 3, economic mobility).
 
-## The problem
+## Why we built it
 
-Products marketed to women often cost more than similar products marketed to
-men: New York City's Department of Consumer Affairs compared nearly 800
-products in 2015 and found women's versions cost 7% more on average ("From
-Cradle to Cane: The Cost of Being a Female Consumer"). But a gap on the shelf
-isn't always a gap for the same product. Moshary, Tuchman & Bhatia ("Gender-
-Based Pricing in Consumer Packaged Goods: A Pink Tax?", *Marketing Science*,
-2023) found that once women's and men's products with similar ingredients are
-compared, price differences are small, and the women's version is sometimes
-cheaper. So the useful question for a shopper isn't "is there a pink tax?" but
-"is *this* pair the same product, and which one is the better buy?"
+In Chinese online shopping communities, shoppers pass around a tip: search
+with substitute words to skip gendered markups, for example looking for a
+medical "prep razor" instead of a women's razor. It's an observation from
+those communities, not survey data, but it captures the idea behind this app:
+the product you need is often sold under a name that doesn't target you.
+
+## Research
+
+- **NYC Department of Consumer Affairs, "From Cradle to Cane: The Cost of
+  Being a Female Consumer" (2015):** across nearly 800 products, women's
+  versions cost 7% more on average. Women paid more in 42% of comparisons;
+  men paid more in 18%.
+- **Moshary, Tuchman & Bhatia, "Gender-Based Pricing in Consumer Packaged
+  Goods: A Pink Tax?" (*Marketing Science*, 2023):** when women's and men's
+  products with similar ingredients are compared, price gaps are small, and
+  the women's version was cheaper in 3 of 5 categories.
+
+So the useful question for a shopper isn't "is there a pink tax?" but "is
+*this* pair the same product, and which one is the better buy?"
 
 ## Principle: look past the label
 
 Judge a product by what it is (its function, active ingredients, and specs),
 not by who it's marketed to. Essence terms come first; gendered swaps are
 secondary.
+
+The pink look is deliberate: the app is dressed like every product marketed to
+women, and underneath it judges products blind. "Yes, it's pink. That's the
+point."
 
 ## How it works
 
@@ -46,6 +59,13 @@ secondary.
 - **Photo extraction.** Upload a label photo and Claude reads it into the
   form. Every field stays editable, the price is filled only if one is
   printed, and text in the image is treated as data, never instructions.
+- **Savings hero.** A card at the top shows your potential savings this
+  session, swaps saved, and your best swap, always recomputed from the
+  saved list; duplicates don't double-count.
+- **Illustrative product cards.** For the "women's razor" example, Discover
+  also shows two illustrative cards: AI-generated images and example
+  prices, labeled as such, with links to real retailer searches. They are not
+  live prices or scraped data.
 
 All Claude output is untrusted: it's validated with Pydantic, anything
 outside the schema is dropped, and any failure falls back to the manual form.
@@ -97,7 +117,7 @@ script with exact numbers is in [docs/demo_script.md](docs/demo_script.md).
 pytest
 ```
 
-181 tests cover unit conversion, the verdict gates, savings, Claude output
+184 tests cover unit conversion, the verdict gates, savings, Claude output
 validation, prompt blindness, and the UI flows, including the full Pink vs
 blue storyline offline. Tests never call the real
 API; the client is mocked.
