@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PinkTax Detective</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* base 70% */
+  --bg:#F6F5F3; --surface:#FFFFFF;
+  /* structure 20% */
+  --line:#E2DFDA; --line-strong:#CFCBC4; --neutral-tint:#EEECE8;
+  --a-tint:#FBEAF0; --a-deep:#E9B3C8;   /* Product A identity */
+  --b-tint:#E8F0F9; --b-deep:#A9C4E4;   /* Product B identity */
+  --ink:#1B1A1F; --muted:#625F68;
+  /* accent 10%: one color, CTAs and interactive highlights only */
+  --accent:#B4145A; --accent-hover:#97104B;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.55}
+h1,h2,h3,h4,p,dl,dd,ul,ol{margin:0}
+ul,ol{padding:0;list-style:none}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--ink);text-underline-offset:3px}
+a:hover{color:var(--accent)}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.display{font-family:'Bricolage Grotesque','DM Sans',system-ui,sans-serif;letter-spacing:-.035em;font-weight:700}
+.muted{color:var(--muted)}
+.sm{font-size:14px}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:14px}
+
+.shell{max-width:1240px;margin:0 auto;padding:48px 40px 80px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:32px;border-bottom:1px solid var(--line)}
+.top h1{font-size:44px;line-height:1;font-weight:800;letter-spacing:-.04em}
+.top p{margin-top:12px;max-width:52ch}
+.tag{font-size:13px;font-weight:600;border:1px solid var(--line-strong);border-radius:6px;padding:3px 10px}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:64px;margin-top:48px;align-items:start}
+.block + .block{margin-top:64px}
+.block h2{font-size:26px;line-height:1.15;display:flex;align-items:baseline;gap:12px}
+.step{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px;color:var(--muted);letter-spacing:0}
+.block-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+
+/* controls */
+.btn{min-height:48px;padding:10px 24px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:600;cursor:pointer;transition:background-color .12s}
+.btn:hover{background:var(--accent-hover)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+.btn.ghost:hover{background:var(--neutral-tint)}
+.btn[disabled]{background:var(--neutral-tint);color:var(--muted);border-color:var(--line);cursor:not-allowed}
+.link{background:none;border:0;padding:8px 4px;min-height:44px;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.link:hover{color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{min-height:44px;padding:8px 16px;border:0;background:transparent;font-weight:500;cursor:pointer;transition:background-color .12s}
+.seg button:hover{background:var(--neutral-tint)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+
+/* search */
+.searchrow{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+.qfield{position:relative;flex:1 1 320px}
+.qfield svg{position:absolute;left:16px;top:50%;transform:translateY(-50%)}
+.qfield input{width:100%;min-height:52px;border-radius:8px;border:1px solid var(--line-strong);padding:0 16px 0 46px;background:var(--surface);font-size:17px}
+.qfield input:focus{border-color:var(--ink)}
+.examples{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;margin-top:8px}
+.results{margin-top:32px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 24px;font-size:15px}
+.facts dt{color:var(--muted)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:12px 16px 12px 0;text-align:left;vertical-align:top}
+thead th{font-size:13px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line-strong);padding-top:0}
+tbody tr{border-bottom:1px solid var(--line)}
+tbody tr:last-child{border-bottom:0}
+tbody th{font-weight:600}
+.links a{margin-right:16px;white-space:nowrap}
+.sub{margin-top:36px}
+.sub h3{font-size:18px;margin-bottom:4px}
+
+/* product cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.card{border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.card.a{background:var(--a-tint);border:1px solid var(--a-deep)}
+.card.b{background:var(--b-tint);border:1px solid var(--b-deep)}
+.card-head{display:grid;grid-template-columns:112px minmax(0,1fr);gap:16px;align-items:start}
+.photo{position:relative;width:112px;height:112px;border-radius:8px;overflow:hidden;background:#fff;border:1px solid rgba(27,26,31,.18)}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.photo .fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:8px;font-size:12px;text-align:center;color:var(--muted)}
+.photo.nophoto img{display:none}
+.photo.nophoto .fallback{display:flex}
+.who{font-size:13px;font-weight:600;color:var(--muted)}
+.card h3{font-size:22px;line-height:1.2;margin:2px 0 4px;overflow-wrap:anywhere}
+.upload{display:inline-block;margin-top:6px;font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px 0}
+.upload input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.upload:hover{color:var(--accent)}
+dl.spec{display:grid;grid-template-columns:auto 1fr;gap:8px 20px;font-size:15px}
+dl.spec dt{color:var(--muted)}
+dl.spec dd{font-weight:500;overflow-wrap:anywhere}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.form .wide{grid-column:1 / -1}
+.form label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.in{width:100%;min-height:44px;border-radius:8px;border:1px solid var(--line-strong);padding:8px 12px;background:#fff}
+textarea.in{min-height:84px;resize:vertical}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;margin-top:24px}
+.errs{margin-top:16px;border:1px solid var(--accent);border-radius:8px;padding:14px 18px;background:#fff}
+
+/* savings pane */
+.pane{position:sticky;top:24px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px}
+.pane h2{font-size:22px}
+.total{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:52px;line-height:1;letter-spacing:-.04em;margin-top:20px}
+.pane ul{margin-top:24px;border-top:1px solid var(--line)}
+.pane li{padding:16px 0;border-bottom:1px solid var(--line)}
+.pane .nm{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.pane .amt{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:20px;letter-spacing:-.03em}
+.pane .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:4px}
+.pane .acts{display:flex;gap:12px;margin-top:2px}
+
+.foot{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);max-width:80ch}
+
+/* report dialog */
+dialog{border:1px solid var(--line-strong);border-radius:14px;padding:0;width:min(1040px,calc(100vw - 32px));max-height:calc(100vh - 32px);background:var(--bg);color:var(--ink);overflow:auto}
+dialog::backdrop{background:rgba(27,26,31,.5)}
+.dh{position:sticky;top:0;z-index:1;background:var(--bg);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding:20px 32px 0;border-bottom:1px solid var(--line)}
+.dh h2{font-size:24px;line-height:1.2}
+.dh .x{margin-left:auto}
+.tabs{display:flex;gap:28px;width:100%}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 0 10px;min-height:44px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.db{padding:32px}
+.split{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:56px}
+.vlabel{font-size:44px;line-height:1.05;font-weight:800}
+.vcode{margin-top:8px}
+.why{margin-top:24px}
+.why li{display:grid;grid-template-columns:14px 1fr;gap:10px;margin-top:8px}
+.why li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ink);margin-top:10px}
+.nums div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.nums div:first-child{padding-top:0}
+.nums dt{color:var(--muted)}
+.nums dd{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.03em;text-align:right}
+.nums .n{display:block;font-family:'DM Sans',sans-serif;font-weight:400;font-size:13px;color:var(--muted);letter-spacing:0}
+.save{margin-top:32px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px 28px;display:flex;flex-wrap:wrap;gap:16px 32px;align-items:center;justify-content:space-between}
+.save .line{font-size:20px;line-height:1.35;font-weight:600;flex:1 1 360px}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:8px;background:#fff}
+.stepper button{width:44px;height:44px;border:0;background:transparent;font-size:20px;cursor:pointer}
+.stepper button:hover{background:var(--neutral-tint)}
+.stepper span{min-width:36px;text-align:center;font-weight:600}
+.dsec + .dsec{margin-top:40px;padding-top:32px;border-top:1px solid var(--line)}
+.dsec h3{font-size:20px;margin-bottom:12px}
+td.ca,th.ca{background:var(--a-tint);padding-left:12px}
+td.cb,th.cb{background:var(--b-tint);padding-left:12px}
+.bars{display:flex;flex-direction:column;gap:16px;max-width:560px}
+.bar-head{display:flex;justify-content:space-between;gap:12px;font-weight:500;margin-bottom:6px}
+.bar{height:12px;border-radius:3px;background:var(--neutral-tint)}
+.bar div{height:12px;border-radius:3px}
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:40px}
+.blind li{margin-top:6px}
+.mark{display:inline-block;font-size:13px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--neutral-tint)}
+.mark.k{background:var(--ink);color:#fff}
+.mark.a{background:var(--a-deep)}
+.mark.b{background:var(--b-deep)}
+
+@media (max-width:980px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:48px}
+  .pane{position:static}
+  .split{grid-template-columns:minmax(0,1fr);gap:32px}
+}
+@media (max-width:600px){
+  .shell{padding:28px 18px 56px}
+  .top h1{font-size:34px}
+  .card{padding:18px}
+  .db{padding:20px}
+  .dh{padding:16px 20px 0}
+  .vlabel{font-size:34px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="top">
+  <div>
+    <h1 class="display">PinkTax Detective</h1>
+    <p class="muted">Compare two products, normalize the price, and check whether the difference is real.</p>
+  </div>
+  <span class="tag">Demo data</span>
+</header>
+
+<div class="layout">
+<main>
+
+<section class="block" aria-labelledby="h-search">
+  <h2 id="h-search" class="display"><span class="step">1</span>Search with neutral terms</h2>
+  <form class="searchrow" id="searchForm" role="search">
+    <div class="qfield">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#625F68" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+      <input id="q" type="search" autocomplete="off" aria-label="What do you want to buy?" placeholder="What do you want to buy? e.g. women’s 5-blade razor" value="women’s rose body wash">
+    </div>
+    <button class="btn" type="submit">Get search terms</button>
+  </form>
+  <div class="examples">
+    <span class="sm muted">Examples</span>
+    <button class="link" type="button" data-example="women’s rose body wash">Body wash</button>
+    <button class="link" type="button" data-example="pink 5-blade razor for her">Razor</button>
+    <button class="link" type="button" data-example="women’s powder deodorant">Deodorant</button>
+  </div>
+  <div class="results" id="searchRes"></div>
+</section>
+
+<section class="block" aria-labelledby="h-compare">
+  <div class="block-head">
+    <h2 id="h-compare" class="display"><span class="step">2</span>Compare products</h2>
+    <div class="seg" role="group" aria-label="Compare mode">
+      <button type="button" data-mode="auto" id="modeAuto">From search</button>
+      <button type="button" data-mode="manual" id="modeManual">Manual</button>
+    </div>
+  </div>
+  <div class="cards" id="cards"></div>
+  <div class="actions" id="actions"></div>
+  <div id="errors" aria-live="polite"></div>
+</section>
+
+</main>
+
+<aside class="pane" aria-labelledby="h-save">
+  <h2 id="h-save" class="display">Total savings</h2>
+  <p class="total" id="total">$0.00</p>
+  <p class="sm muted" style="margin-top:8px">per year, estimated</p>
+  <ul id="saveList"></ul>
+  <p class="sm muted" style="margin-top:20px" id="saveNote"></p>
+</aside>
+</div>
+
+<p class="foot sm muted">One pair is not evidence of a market-wide pattern, and a potential premium is an observation, not proof of discrimination. Demo data is synthetic. Search terms are cached Claude output. Photos are random stock images, so replace them with real ones before recording.</p>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dh">
+    <h2 id="dlgTitle" class="display"></h2>
+    <button type="button" class="btn ghost x" id="dlgClose">Close</button>
+    <div class="tabs" role="tablist" aria-label="Report sections">
+      <button type="button" role="tab" id="tabSummary" aria-selected="true" aria-controls="dlgBody" data-tab="summary">Summary</button>
+      <button type="button" role="tab" id="tabDetails" aria-selected="false" aria-controls="dlgBody" data-tab="details">Details</button>
+    </div>
+  </div>
+  <div class="db" id="dlgBody" role="tabpanel" aria-labelledby="tabSummary"></div>
+</dialog>
+
+<script>
+/* ================= Demo data (synthetic) ================= */
+const PAIRS = [
+  { key: 'body',
+    A: { name: 'Rose Glow Body Wash', label: 'women', price: 6.49, qty: 16, unit: 'fl_oz', pack: 1,
+         attrs: 'Cleanses skin; same surfactant type; rose fragrance; pump bottle', img: 'shampoo', lock: 11 },
+    B: { name: 'Ocean Fresh Body Wash', label: 'men', price: 4.99, qty: 16, unit: 'fl_oz', pack: 1,
+         attrs: 'Cleanses skin; same surfactant type; ocean fragrance; pump bottle', img: 'soap', lock: 12 },
+    claude: { comparable: 'yes', note: 'Same function and formulation type; only the fragrance differs.' },
+    diffs: [{ attr: 'Fragrance', a: 'Rose', b: 'Ocean', material: false }], missing: [] },
+  { key: 'razor',
+    A: { name: 'Silk Touch 5-Blade Razor', label: 'women', price: 9.99, qty: 4, unit: 'count', pack: 1,
+         attrs: '5 blades; aloe lubricating strip; pivoting head; 4 cartridges', img: 'razor', lock: 21 },
+    B: { name: 'Edge Pro 3-Blade Razor', label: 'men', price: 7.49, qty: 4, unit: 'count', pack: 1,
+         attrs: '3 blades; plain lubricating strip; pivoting head; 4 cartridges', img: 'shaving', lock: 22 },
+    claude: { comparable: 'no', note: 'Blade count differs, which changes the shave.' },
+    diffs: [{ attr: 'Blade count', a: '5', b: '3', material: true }, { attr: 'Lubricating strip', a: 'Aloe', b: 'Plain', material: false }], missing: [] },
+  { key: 'deodorant',
+    A: { name: 'Powder Fresh Deodorant', label: 'women', price: 5.29, qty: 2.6, unit: 'oz', pack: 1,
+         attrs: 'Antiperspirant stick; 24-hour claim; powder scent', img: 'deodorant', lock: 31 },
+    B: { name: 'Sport Fresh Deodorant', label: 'men', price: 4.79, qty: 2.6, unit: 'oz', pack: 1,
+         attrs: 'Antiperspirant stick; 24-hour claim', img: 'cosmetics', lock: 32 },
+    claude: { comparable: 'unclear', note: 'Ingredients are missing for both products, so equivalence can’t be judged.' },
+    diffs: [], missing: ['Active ingredients for Product A', 'Active ingredients for Product B', 'Scent for Product B'] }
+];
+
+/* Cached output of alternatives.py. Claude writes terms only; links are built by code. */
+const TERMS = {
+  body: ['unscented body wash 16 fl oz pump', 'men’s body wash 16 fl oz', 'bulk liquid body soap refill'],
+  razor: ['razor cartridges 5 blade 4 count', 'men’s razor cartridges 5 blade', 'barber supply razor cartridges bulk'],
+  deodorant: ['unscented antiperspirant stick 2.6 oz', 'men’s antiperspirant stick 2.6 oz', 'bulk antiperspirant case']
+};
+const KINDS = [
+  { id: 'n', name: 'Neutral essence', why: 'The product itself, no gender word.' },
+  { id: 'm', name: 'Men’s version', why: 'An option to check, not the default.' },
+  { id: 'c', name: 'Commercial or professional', why: 'Bulk or trade supply; specs can differ a lot.' }
+];
+
+/* Cached candidates for the "From search" mode (synthetic) */
+const CANDS = {
+  body: [
+    { kind: 'n', product: { name: 'Unscented Pump Body Wash', label: 'neutral', price: 3.99, qty: 16, unit: 'fl_oz', pack: 1, attrs: 'Cleanses skin; same surfactant type; fragrance free; pump bottle', img: 'bottle', lock: 41 },
+      claude: { comparable: 'yes', note: 'Same function and formulation type; only the fragrance differs.' },
+      diffs: [{ attr: 'Fragrance', a: 'Rose', b: 'None', material: false }], missing: [] },
+    { kind: 'm', product: { name: 'Cedar Wash Body Wash', label: 'men', price: 4.79, qty: 16, unit: 'fl_oz', pack: 1, attrs: 'Cleanses skin; same surfactant type; cedar fragrance; pump bottle', img: 'soap', lock: 42 },
+      claude: { comparable: 'yes', note: 'Same function and formulation type; only the fragrance differs.' },
+      diffs: [{ attr: 'Fragrance', a: 'Rose', b: 'Cedar', material: false }], missing: [] },
+    { kind: 'c', product: { name: 'Bulk Liquid Body Soap Refill (1 gal)', label: 'unknown', price: 14.99, qty: 128, unit: 'fl_oz', pack: 1, attrs: 'Cleans skin; hand-soap formulation; unscented; refill jug, no pump', img: 'jug', lock: 43 },
+      claude: { comparable: 'no', note: 'Hand-soap formulation in a refill jug, not a body wash with a pump.' },
+      diffs: [{ attr: 'Formulation', a: 'Body wash', b: 'Hand soap', material: true }, { attr: 'Container', a: 'Pump bottle', b: 'Refill jug', material: false }], missing: [] }
+  ],
+  razor: [
+    { kind: 'n', product: { name: '5-Blade Razor Cartridges, 4 ct', label: 'neutral', price: 7.99, qty: 4, unit: 'count', pack: 1, attrs: '5 blades; aloe lubricating strip; pivoting head; 4 cartridges', img: 'razor', lock: 51 },
+      claude: { comparable: 'yes', note: 'Same blade count and features.' }, diffs: [], missing: [] },
+    { kind: 'm', product: { name: 'Edge Pro 5-Blade Razor', label: 'men', price: 10.49, qty: 4, unit: 'count', pack: 1, attrs: '5 blades; plain lubricating strip; pivoting head; 4 cartridges', img: 'shaving', lock: 52 },
+      claude: { comparable: 'yes', note: 'Same blade count; only the lubricating strip differs.' },
+      diffs: [{ attr: 'Lubricating strip', a: 'Aloe', b: 'Plain', material: false }], missing: [] },
+    { kind: 'c', product: { name: 'Barber Supply Razor Cartridges, 12 ct', label: 'unknown', price: 24.99, qty: 12, unit: 'count', pack: 1, attrs: '3 blades; no lubricating strip; barber supply; 12 cartridges', img: 'barber', lock: 53 },
+      claude: { comparable: 'no', note: 'Fewer blades and no lubricating strip, so a different shave.' },
+      diffs: [{ attr: 'Blade count', a: '5', b: '3', material: true }, { attr: 'Lubricating strip', a: 'Aloe', b: 'None', material: false }], missing: [] }
+  ],
+  deodorant: [
+    { kind: 'n', product: { name: 'Unscented Antiperspirant Stick', label: 'neutral', price: 4.29, qty: 2.6, unit: 'oz', pack: 1, attrs: 'Antiperspirant stick; 24-hour claim; unscented', img: 'deodorant', lock: 61 },
+      claude: { comparable: 'unclear', note: 'Ingredients are missing for both products, so equivalence can’t be judged.' },
+      diffs: [], missing: ['Active ingredients for Product A', 'Active ingredients for Product B'] },
+    { kind: 'm', product: { name: 'Sport Fresh Deodorant', label: 'men', price: 4.79, qty: 2.6, unit: 'oz', pack: 1, attrs: 'Antiperspirant stick; 24-hour claim', img: 'cosmetics', lock: 32 },
+      claude: { comparable: 'unclear', note: 'Ingredients are missing for both products, so equivalence can’t be judged.' },
+      diffs: [], missing: ['Active ingredients for Product A', 'Active ingredients for Product B'] },
+    { kind: 'c', product: { name: 'Antiperspirant Roll-On, Bulk Case', label: 'unknown', price: 19.99, qty: 3, unit: 'fl_oz', pack: 6, attrs: 'Antiperspirant roll-on; 24-hour claim; unscented; 6-pack', img: 'roll', lock: 63 },
+      claude: { comparable: 'no', note: 'A roll-on is a different form from a stick.' },
+      diffs: [{ attr: 'Form', a: 'Stick', b: 'Roll-on', material: true }], missing: [] }
+  ]
+};
+
+/* ================= Engine (mockup stand-in for normalize.py + verdict.py) ================= */
+const TO_BASE = { ml: ['ml', 1], l: ['ml', 1000], fl_oz: ['ml', 29.5735], g: ['g', 1], kg: ['g', 1000], oz: ['g', 28.3495], count: ['item', 1] };
+const UNIT_TEXT = { ml: 'ml', l: 'l', fl_oz: 'fl oz', g: 'g', kg: 'kg', oz: 'oz', count: 'ct' };
+const money = (n) => '$' + n.toFixed(2);
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function normalize(p) {
+  const [basis, f] = TO_BASE[p.unit];
+  const amount = p.qty * f * p.pack;
+  const per = basis === 'item' ? amount : amount / 100;
+  return { basis, amount, per, unitPrice: p.price / per, perLabel: basis === 'item' ? 'per item' : 'per 100 ' + basis };
+}
+const sizeText = (p) => p.qty + ' ' + UNIT_TEXT[p.unit] + (p.pack > 1 ? ' × ' + p.pack : '');
+function validate(d) {
+  const errs = [];
+  ['A', 'B'].forEach((s) => {
+    const p = d[s];
+    if (!(p.price > 0)) errs.push('Product ' + s + ': price must be a number greater than 0.');
+    if (!(p.qty > 0)) errs.push('Product ' + s + ': quantity must be a number greater than 0.');
+    if (!(p.pack >= 1)) errs.push('Product ' + s + ': pack count must be 1 or more.');
+  });
+  return errs;
+}
+function evaluate(d) {
+  const { A, B, claude, diffs } = d;
+  const nA = normalize(A), nB = normalize(B);
+  const sameDim = nA.basis === nB.basis;
+  const material = diffs.filter((x) => x.material);
+  const wm = (A.label === 'women' && B.label === 'men') || (A.label === 'men' && B.label === 'women');
+  let code;
+  if (!sameDim) code = 'NOT_COMPARABLE';
+  else if (claude.comparable === 'unclear') code = 'INSUFFICIENT_EVIDENCE';
+  else if (claude.comparable === 'no' || material.length) code = 'NOT_COMPARABLE';
+  else if (wm) {
+    const W = A.label === 'women' ? nA : nB, M = A.label === 'women' ? nB : nA;
+    code = W.unitPrice > M.unitPrice ? 'POTENTIAL_PREMIUM' : 'NO_OBSERVED_PREMIUM';
+  } else code = 'PRICE_COMPARISON_ONLY';
+  const out = { nA, nB, sameDim, material, code, stopped: code === 'NOT_COMPARABLE' || code === 'INSUFFICIENT_EVIDENCE' };
+  if (wm) {
+    const wIsA = A.label === 'women';
+    const W = wIsA ? { p: A, n: nA, side: 'A' } : { p: B, n: nB, side: 'B' };
+    const M = wIsA ? { p: B, n: nB, side: 'B' } : { p: A, n: nA, side: 'A' };
+    out.premiumPct = (W.n.unitPrice - M.n.unitPrice) / M.n.unitPrice * 100;
+    out.perUnitSave = W.n.unitPrice - M.n.unitPrice;
+    out.atSize = W.p.price - M.n.unitPrice * W.n.per;
+  }
+  const hiIsA = nA.unitPrice >= nB.unitPrice;
+  out.hi = hiIsA ? { p: A, n: nA, side: 'A' } : { p: B, n: nB, side: 'B' };
+  out.lo = hiIsA ? { p: B, n: nB, side: 'B' } : { p: A, n: nA, side: 'A' };
+  out.gapPct = (out.hi.n.unitPrice - out.lo.n.unitPrice) / out.lo.n.unitPrice * 100;
+  out.perUnitSavePO = out.hi.n.unitPrice - out.lo.n.unitPrice;
+  out.atSizePO = out.hi.p.price - out.lo.n.unitPrice * out.hi.n.per;
+  return out;
+}
+/* Saving per purchase that counts toward the total (0 if none) */
+function savingOf(r) {
+  if (r.code === 'POTENTIAL_PREMIUM') return r.atSize;
+  if (r.code === 'PRICE_COMPARISON_ONLY' && r.atSizePO > 0.005) return r.atSizePO;
+  return 0;
+}
+const VERDICT = {
+  POTENTIAL_PREMIUM: { label: 'Potential premium', chip: 'a' },
+  NO_OBSERVED_PREMIUM: { label: 'No observed premium', chip: 'b' },
+  PRICE_COMPARISON_ONLY: { label: 'Price comparison only', chip: 'b' },
+  NOT_COMPARABLE: { label: 'Not comparable', chip: '' },
+  INSUFFICIENT_EVIDENCE: { label: 'Insufficient evidence', chip: '' }
+};
+
+/* ================= Search helpers ================= */
+const GENDER_RE = /\b(women[’']?s|woman[’']?s|ladies[’']?|lady|female|for her|girls?[’']?s?|pink|men[’']?s|man[’']?s|male|for him|boys?[’']?s?|masculine|feminine)\b/gi;
+const hasGender = (s) => { GENDER_RE.lastIndex = 0; return GENDER_RE.test(s); };
+function neutralize(q) {
+  const removed = [];
+  const clean = q.replace(GENDER_RE, (m) => { removed.push(m); return ' '; }).replace(/\s+/g, ' ').trim();
+  return { clean, removed };
+}
+function detectKey(t) {
+  t = t.toLowerCase();
+  if (/razor|shav/.test(t)) return 'razor';
+  if (/deodorant|antiperspirant/.test(t)) return 'deodorant';
+  if (/body wash|shower|body soap/.test(t)) return 'body';
+  return null;
+}
+const STORES = [
+  { n: 'Google Shopping', u: (q) => 'https://www.google.com/search?tbm=shop&q=' + encodeURIComponent(q) },
+  { n: 'Amazon', u: (q) => 'https://www.amazon.com/s?k=' + encodeURIComponent(q) },
+  { n: 'Target', u: (q) => 'https://www.target.com/s?searchTerm=' + encodeURIComponent(q) }
+];
+
+/* ================= State ================= */
+const state = {
+  mode: 'auto', A: null, B: null, claude: null, diffs: [], missing: [],
+  fromCandidate: null, simClaude: 'yes', search: null, photos: {},
+  savings: [],           /* { id, data, times } */
+  view: null             /* { data, times, tab } */
+};
+const $ = (id) => document.getElementById(id);
+const pairId = (d) => d.A.name + '|' + d.B.name;
+
+function setPair(i) {
+  const p = PAIRS[i];
+  state.A = clone(p.A); state.B = clone(p.B);
+  state.claude = clone(p.claude); state.diffs = clone(p.diffs); state.missing = clone(p.missing);
+  state.fromCandidate = null; state.simClaude = p.claude.comparable;
+}
+function runSearch(q) {
+  const { clean, removed } = neutralize(q);
+  const key = detectKey(clean || q);
+  let terms, source;
+  if (key) { terms = TERMS[key]; source = 'cached'; }
+  else { const base = clean || q; terms = [base, 'men’s ' + base, base + ' bulk professional supply']; source = 'fallback'; }
+  state.search = { query: q, clean, removed, key, terms, source, cands: key ? CANDS[key] : null };
+  if (key) { setPair(PAIRS.findIndex((p) => p.key === key)); state.mode = 'auto'; }
+}
+
+/* ================= Render: search ================= */
+function renderSearch() {
+  const host = $('searchRes');
+  const s = state.search;
+  if (!s) { host.innerHTML = ''; return; }
+  const rows = s.terms.map((t, i) => {
+    const k = KINDS[i];
+    const check = k.id === 'm' ? 'Men’s version, an option' : (hasGender(t) ? 'Contains a gender word' : 'No gender words');
+    return `<tr>
+      <th scope="row">${k.name}<span class="sm muted" style="display:block;font-weight:400">${k.why}</span></th>
+      <td><span class="mono">${esc(t)}</span><span class="sm muted" style="display:block">${check}</span></td>
+      <td class="links">${STORES.map((st) => `<a href="${esc(st.u(t))}" target="_blank" rel="noopener noreferrer">${st.n}</a>`).join('')}</td>
+    </tr>`;
+  }).join('');
+  const cands = s.cands ? `
+    <div class="sub">
+      <h3 class="display">Candidates to compare</h3>
+      <p class="sm muted">Cached demo listings with synthetic prices. Pick one to fill Product B and run the comparison.</p>
+      <div class="tw" style="margin-top:12px"><table>
+        <thead><tr><th scope="col">Product</th><th scope="col">Price</th><th scope="col">Unit price</th><th scope="col">Label</th><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Action</span></th></tr></thead>
+        <tbody>${s.cands.map((c, i) => {
+          const n = normalize(c.product);
+          return `<tr><th scope="row">${esc(c.product.name)}<span class="sm muted" style="display:block;font-weight:400">${esc(sizeText(c.product))}</span></th>
+            <td>${money(c.product.price)}</td><td>${money(n.unitPrice)} ${n.perLabel}</td><td>${c.product.label}</td>
+            <td><button type="button" class="btn ghost" data-cand="${i}">Compare with A</button></td></tr>`;
+        }).join('')}</tbody></table></div>
+    </div>` : `<p class="sm muted sub">No cached candidates for this search. Open a store link, find a candidate, then switch to Manual and enter it as Product B.</p>`;
+  host.innerHTML = `
+    <dl class="facts">
+      <dt>Removed from your search</dt><dd>${s.removed.length ? s.removed.map((r) => `<span class="mark a">${esc(r)}</span>`).join(' ') : 'nothing'}</dd>
+      <dt>Neutral search</dt><dd class="mono">${esc(s.clean || '(empty)')}</dd>
+    </dl>
+    <div class="sub" style="margin-top:28px">
+      <h3 class="display">Search terms</h3>
+      <p class="sm muted">${s.source === 'cached' ? 'Cached Claude output. Claude writes the terms; code builds the links.' : 'No cached result for this search, so code generated these terms.'}</p>
+      <div class="tw" style="margin-top:12px"><table>
+        <thead><tr><th scope="col">Type</th><th scope="col">Search term</th><th scope="col">Open in</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <p class="sm muted" style="margin-top:12px">Found a candidate? Fill it into Product B and compare again. A cheaper listing only counts if the equivalence check passes.</p>
+    </div>
+    ${cands}`;
+}
+
+/* ================= Render: products ================= */
+const LABELS = { women: 'Marketed to women', men: 'Marketed to men', neutral: 'Marketed as neutral', unknown: 'Label unknown' };
+function photo(side, p) {
+  const custom = state.photos[side + '|' + p.name];
+  const src = custom || (p.img ? `https://loremflickr.com/320/320/${p.img}?lock=${p.lock}` : '');
+  return `<div><div class="photo ${src ? '' : 'nophoto'}">
+      ${src ? `<img src="${esc(src)}" alt="Demo photo of ${esc(p.name)}" loading="lazy" onerror="this.parentNode.classList.add('nophoto')">` : ''}
+      <div class="fallback">No photo yet</div></div>
+      <label class="upload">Replace photo<input type="file" accept="image/*" data-upload="${side}"></label></div>`;
+}
+function cardAuto(side, p) {
+  const cand = side === 'B' && state.fromCandidate ? ' · candidate from search' : '';
+  return `<section class="card ${side === 'A' ? 'a' : 'b'}" aria-labelledby="name${side}">
+    <div class="card-head">${photo(side, p)}
+      <div><p class="who">Product ${side} · ${LABELS[p.label]}${cand}</p><h3 id="name${side}" class="display">${esc(p.name)}</h3>
+      <p class="muted sm">${esc(p.source || 'Synthetic pair, DEMO DATA')} · ${esc(p.date || 'Nov 6, 2026')}</p></div></div>
+    <dl class="spec">
+      <dt>Price</dt><dd>${money(p.price)}</dd>
+      <dt>Size</dt><dd>${esc(sizeText(p))}</dd>
+      <dt>Attributes</dt><dd>${esc(p.attrs)}</dd>
+    </dl></section>`;
+}
+function cardManual(side, p) {
+  const id = (f) => `f-${side}-${f}`;
+  return `<section class="card ${side === 'A' ? 'a' : 'b'}" aria-labelledby="name${side}">
+    <div class="card-head">${photo(side, p)}
+      <div><p class="who">Product ${side} · manual entry</p><h3 id="name${side}" class="display">${esc(p.name || 'Untitled product')}</h3></div></div>
+    <div class="form">
+      <div class="wide"><label for="${id('name')}">Product name</label><input class="in" id="${id('name')}" value="${esc(p.name)}"></div>
+      <div><label for="${id('price')}">Price (USD)</label><input class="in" id="${id('price')}" inputmode="decimal" value="${esc(p.price)}"></div>
+      <div><label for="${id('qty')}">Quantity</label><input class="in" id="${id('qty')}" inputmode="decimal" value="${esc(p.qty)}"></div>
+      <div><label for="${id('unit')}">Unit</label><select class="in" id="${id('unit')}">${Object.keys(TO_BASE).map((u) => `<option value="${u}" ${u === p.unit ? 'selected' : ''}>${u}</option>`).join('')}</select></div>
+      <div><label for="${id('pack')}">Pack count</label><input class="in" id="${id('pack')}" inputmode="numeric" value="${esc(p.pack)}"></div>
+      <div class="wide"><label for="${id('label')}">Marketing label</label><select class="in" id="${id('label')}">${['women', 'men', 'neutral', 'unknown'].map((l) => `<option value="${l}" ${l === p.label ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="wide"><label for="${id('attrs')}">Key attributes (separate with ;)</label><textarea class="in" id="${id('attrs')}">${esc(p.attrs)}</textarea></div>
+      <div><label for="${id('source')}">Source URL</label><input class="in" id="${id('source')}" value="${esc(p.source || '')}" placeholder="https://…"></div>
+      <div><label for="${id('date')}">Date seen</label><input class="in" id="${id('date')}" value="${esc(p.date || 'Nov 6, 2026')}"></div>
+    </div></section>`;
+}
+function renderProducts() {
+  $('modeAuto').setAttribute('aria-pressed', state.mode === 'auto');
+  $('modeManual').setAttribute('aria-pressed', state.mode === 'manual');
+  const f = state.mode === 'manual' ? cardManual : cardAuto;
+  $('cards').innerHTML = f('A', state.A) + f('B', state.B);
+  const manual = state.mode === 'manual';
+  $('actions').innerHTML = `<button class="btn" id="compare" type="button">Compare and open report</button>
+    ${manual ? `<span><label for="sim" class="sm muted">Claude check (simulated)</label><br>
+      <select class="in" id="sim" style="width:auto;min-width:170px">${['yes', 'no', 'unclear'].map((v) => `<option value="${v}" ${v === state.simClaude ? 'selected' : ''}>comparable: ${v}</option>`).join('')}</select></span>` : ''}
+    <p class="sm muted" style="flex:1 1 280px;max-width:56ch">${manual
+      ? 'Demo stub: the real app asks Claude, which sees attributes and sizes only.'
+      : 'Claude judges equivalence without seeing the price, label or name. All math is deterministic.'}</p>`;
+}
+
+/* ================= Render: savings pane ================= */
+function renderSavings() {
+  let total = 0;
+  const items = state.savings.map((s) => {
+    const r = evaluate(s.data);
+    const per = savingOf(r);
+    total += per * s.times;
+    return `<li><p class="nm">${esc(s.data.A.name)} → ${esc(s.data.B.name)}</p>
+      <div class="row"><span class="amt">${money(per * s.times)}/yr</span><span class="sm muted">${s.times} buys × ${money(per)}</span></div>
+      <div class="acts"><button type="button" class="link" data-view="${esc(s.id)}">View report</button><button type="button" class="link" data-remove="${esc(s.id)}">Remove</button></div></li>`;
+  }).join('');
+  $('total').textContent = money(total);
+  $('saveList').innerHTML = items;
+  $('saveNote').textContent = state.savings.length
+    ? 'Counts only comparisons that passed the equivalence check. Estimates use the prices entered.'
+    : 'Run a comparison and add it here. Only equivalent products count toward savings.';
+}
+
+/* ================= Report dialog ================= */
+function openReport(data, tab) {
+  const id = pairId(data);
+  const saved = state.savings.find((s) => s.id === id);
+  state.view = { data, times: saved ? saved.times : 6, tab: tab || 'summary' };
+  renderDialog();
+  if (!$('dlg').open) $('dlg').showModal();
+}
+function renderDialog() {
+  const v = state.view; if (!v) return;
+  const d = v.data, r = evaluate(d);
+  $('dlgTitle').textContent = d.A.name + ' vs. ' + d.B.name;
+  ['summary', 'details'].forEach((t) => {
+    const b = $('tab' + t[0].toUpperCase() + t.slice(1));
+    b.setAttribute('aria-selected', v.tab === t);
+    b.tabIndex = v.tab === t ? 0 : -1;
+  });
+  $('dlgBody').setAttribute('aria-labelledby', v.tab === 'summary' ? 'tabSummary' : 'tabDetails');
+  $('dlgBody').innerHTML = v.tab === 'summary' ? reportSummary(d, r, v) : reportDetails(d, r);
+}
+function reasonsOf(r) {
+  const out = [];
+  if (!r.sameDim) {
+    out.push('Units can’t be converted: ' + r.nA.basis + ' vs. ' + r.nB.basis + ' with no density.');
+    out.push('There is no shared basis for a price comparison.');
+    return out;
+  }
+  out.push('Enough data: both prices and sizes convert to the same basis.');
+  if (r.code === 'INSUFFICIENT_EVIDENCE') {
+    out.push('Couldn’t check equivalence: Claude answered “unclear”, so the engine stops instead of guessing.');
+    out.push('Add the missing attributes and compare again.');
+  } else if (r.code === 'NOT_COMPARABLE') {
+    const m = r.material.length ? r.material.map((x) => `${x.attr.toLowerCase()} (${x.a} vs. ${x.b})`).join(', ') : 'Claude judged them not equivalent';
+    out.push('Material difference found: ' + m + '.');
+    out.push('The products are not equivalent, so no premium or saving is reported.');
+  } else if (r.code === 'PRICE_COMPARISON_ONLY') {
+    out.push('Claude found no material differences between the two products.');
+    out.push('At least one product is not labeled for women or men, so there is no gender verdict.');
+  } else {
+    out.push('Claude found no material differences between the two products.');
+    out.push(r.code === 'POTENTIAL_PREMIUM' ? 'The women’s-marketed product costs more per unit.' : 'The women’s-marketed product does not cost more per unit.');
+  }
+  return out;
+}
+function reportSummary(d, r, v) {
+  const V = VERDICT[r.code];
+  const nums = [];
+  if (r.sameDim) {
+    nums.push(['Product A unit price', money(r.nA.unitPrice), r.nA.perLabel]);
+    nums.push(['Product B unit price', money(r.nB.unitPrice), r.nB.perLabel]);
+  }
+  if (r.code === 'POTENTIAL_PREMIUM') nums.push(['Potential premium', '+' + r.premiumPct.toFixed(1) + '%', 'women’s vs. men’s unit price']);
+  else if (r.code === 'NO_OBSERVED_PREMIUM') nums.push(['Women’s vs. men’s', (r.premiumPct > 0 ? '+' : r.premiumPct < 0 ? '−' : '') + Math.abs(r.premiumPct).toFixed(1) + '%', 'unit price, no premium observed']);
+  else if (r.code === 'PRICE_COMPARISON_ONLY') nums.push(['Unit price gap', r.gapPct.toFixed(1) + '%', 'Product ' + r.hi.side + ' costs more']);
+  else nums.push(['Premium', 'Not reported', r.code === 'INSUFFICIENT_EVIDENCE' ? 'couldn’t check equivalence' : 'products are not equivalent']);
+  const per = savingOf(r);
+  const saved = state.savings.find((s) => s.id === pairId(d));
+  let saveBlock;
+  if (per > 0) {
+    const line = r.code === 'POTENTIAL_PREMIUM'
+      ? `The men’s equivalent costs ${money(r.perUnitSave)} less ${r.nA.perLabel} (${money(per)} less at this size).`
+      : `Product ${r.lo.side} costs ${money(r.perUnitSavePO)} less ${r.nA.perLabel} (${money(per)} less at the size of Product ${r.hi.side}).`;
+    saveBlock = `<div class="save">
+      <div class="line">${line}<span class="sm muted" style="display:block;font-weight:400;margin-top:4px">${r.code === 'POTENTIAL_PREMIUM' ? 'A price gap for this pair on this date, not proof of discrimination.' : 'A price gap, not a claim about gender. Check quality and size on the listing.'}</span></div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px">
+        <div><span class="sm muted" style="display:block">Buys per year</span>
+          <div class="stepper"><button type="button" id="down" aria-label="Buy less often">−</button><span aria-live="polite">${v.times}</span><button type="button" id="up" aria-label="Buy more often">+</button></div></div>
+        <div><span class="sm muted" style="display:block">Per year</span><strong class="display" style="font-size:24px">${money(per * v.times)}</strong></div>
+        <button type="button" class="btn" id="addSave" ${saved ? 'disabled' : ''}>${saved ? 'In total savings' : 'Add to total savings'}</button>
+      </div></div>`;
+  } else {
+    saveBlock = `<p class="muted" style="margin-top:32px">No saving to add for this result.</p>`;
+  }
+  return `<div class="split">
+    <div>
+      <span class="mark ${V.chip}">${r.code}</span>
+      <p class="vlabel display" style="margin-top:12px">${V.label}</p>
+      <ul class="why">${reasonsOf(r).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+    </div>
+    <dl class="nums">${nums.map((n) => `<div><dt>${n[0]}</dt><dd>${n[1]}<span class="n">${n[2]}</span></dd></div>`).join('')}</dl>
+  </div>
+  ${saveBlock}
+  <p style="margin-top:24px"><button type="button" class="link" data-tab="details">See the full details</button></p>`;
+}
+function reportDetails(d, r) {
+  const A = d.A, B = d.B;
+  const maxU = Math.max(r.nA.unitPrice, r.nB.unitPrice);
+  const reference = r.stopped;
+  const priceGap = A.price - B.price;
+  const rows = [];
+  rows.push(['Price paid', money(A.price), money(B.price), (priceGap >= 0 ? '+' : '−') + money(Math.abs(priceGap))]);
+  rows.push(['Size', esc(sizeText(A)), esc(sizeText(B)), r.sameDim ? (r.nA.amount === r.nB.amount ? 'Same size' : 'Different sizes') : 'Different dimensions']);
+  if (r.sameDim) {
+    const g = (r.nA.unitPrice - r.nB.unitPrice) / r.nB.unitPrice * 100;
+    rows.push(['Unit price (' + r.nA.perLabel + ')', money(r.nA.unitPrice), money(r.nB.unitPrice), (g >= 0 ? '+' : '−') + money(Math.abs(r.nA.unitPrice - r.nB.unitPrice)) + ' (' + (g >= 0 ? '+' : '−') + Math.abs(g).toFixed(1) + '%)' + (reference ? ', reference only' : '')]);
+  }
+  rows.push(['Marketing label', A.label, B.label, '—']);
+  const gates = [
+    r.sameDim ? ['Gate A · Enough data', 'Pass', 'Prices and quantities valid, units convertible.'] : ['Gate A · Enough data', 'Stop', 'Units can’t be converted to one basis.'],
+    !r.sameDim ? ['Gate B · Equivalence', 'Skipped', 'Not reached because Gate A stopped.']
+      : r.stopped ? ['Gate B · Equivalence', 'Stop', r.code === 'INSUFFICIENT_EVIDENCE' ? 'Unclear: couldn’t check equivalence.' : 'Material difference found.']
+      : ['Gate B · Equivalence', 'Pass', 'No material differences found.'],
+    ['Gate C · Context', 'Pass', 'Same date, no sale flagged.'],
+    r.stopped ? ['Gate D · Observed difference', 'Skipped', 'Not reached because an earlier gate stopped.']
+      : r.code === 'PRICE_COMPARISON_ONLY' ? ['Gate D · Observed difference', 'Price only', 'Neutral or unknown label: no gender verdict.']
+      : ['Gate D · Observed difference', r.code === 'POTENTIAL_PREMIUM' ? 'Higher' : 'Not higher', r.code === 'POTENTIAL_PREMIUM' ? 'Women’s per-unit price is higher.' : 'Women’s per-unit price is not higher.']
+  ];
+  const diffTable = d.diffs.length
+    ? `<div class="tw"><table><thead><tr><th scope="col">Attribute</th><th scope="col" class="ca">Product A</th><th scope="col" class="cb">Product B</th><th scope="col">Material?</th></tr></thead><tbody>
+        ${d.diffs.map((x) => `<tr><th scope="row">${esc(x.attr)}</th><td class="ca">${esc(x.a)}</td><td class="cb">${esc(x.b)}</td><td>${x.material ? '<span class="mark a">Yes</span>' : 'No'}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="muted">No differences could be listed from the attributes provided.</p>';
+  return `
+  <section class="dsec"><h3 class="display">Side by side</h3>
+    <div class="tw"><table><thead><tr><th scope="col">Metric</th><th scope="col" class="ca">Product A</th><th scope="col" class="cb">Product B</th><th scope="col">Gap (A − B)</th></tr></thead>
+    <tbody>${rows.map((x) => `<tr><th scope="row">${x[0]}</th><td class="ca">${x[1]}</td><td class="cb">${x[2]}</td><td><strong>${x[3]}</strong></td></tr>`).join('')}</tbody></table></div>
+    ${r.sameDim ? `<div class="bars" style="margin-top:28px">
+      <div><div class="bar-head"><span>Product A</span><span>${money(r.nA.unitPrice)} ${r.nA.perLabel}</span></div><div class="bar"><div style="width:${(r.nA.unitPrice / maxU * 100).toFixed(0)}%;background:var(--a-deep)"></div></div></div>
+      <div><div class="bar-head"><span>Product B</span><span>${money(r.nB.unitPrice)} ${r.nB.perLabel}</span></div><div class="bar"><div style="width:${(r.nB.unitPrice / maxU * 100).toFixed(0)}%;background:var(--b-deep)"></div></div></div>
+    </div>
+    <p class="sm muted" style="margin-top:12px">${reference ? 'Shown for reference. A price gap without an equivalence check is not a premium.' : 'Premium % = (women’s unit price − men’s unit price) ÷ men’s unit price.'}</p>` : ''}
+  </section>
+  <section class="dsec"><h3 class="display">Checks run</h3>
+    <div class="tw"><table><tbody>${gates.map((g) => `<tr><th scope="row">${g[0]}</th><td><span class="mark ${g[1] === 'Stop' ? 'a' : ''}">${g[1]}</span></td><td class="muted">${g[2]}</td></tr>`).join('')}</tbody></table></div>
+  </section>
+  <section class="dsec"><h3 class="display">Blind equivalence check</h3>
+    <div class="cols2">
+      <ul class="blind"><li>Claude saw: <span class="mark">attributes</span> <span class="mark">sizes</span></li>
+        <li>Withheld: <span class="mark k">price</span> <span class="mark k">marketing label</span> <span class="mark k">product name</span></li></ul>
+      <div><p class="mono"><strong>comparable: "${esc(d.claude.comparable)}"</strong></p><p>${esc(d.claude.note)}</p></div>
+    </div>
+  </section>
+  <section class="dsec"><h3 class="display">Attribute differences</h3>${diffTable}</section>
+  <section class="dsec"><div class="cols2">
+    <div><h3 class="display">Missing data</h3><ul class="why">${(d.missing.length ? d.missing : ['Nothing missing.']).map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    <div><h3 class="display">Context warnings</h3><ul class="why"><li>None. Same date, no sale flagged.</li></ul></div>
+  </div></section>`;
+}
+
+/* ================= Events ================= */
+function readForm() {
+  ['A', 'B'].forEach((s) => {
+    const g = (f) => $('f-' + s + '-' + f).value;
+    state[s] = Object.assign({}, state[s], {
+      name: g('name').trim(), price: parseFloat(g('price')), qty: parseFloat(g('qty')), unit: g('unit'),
+      pack: parseInt(g('pack'), 10), label: g('label'), attrs: g('attrs').trim(), source: g('source').trim(), date: g('date').trim()
+    });
+  });
+}
+function manualDiffs() {
+  const seg = (s) => s.split(';').map((x) => x.trim()).filter(Boolean);
+  const a = seg(state.A.attrs), b = seg(state.B.attrs);
+  const la = a.map((x) => x.toLowerCase()), lb = b.map((x) => x.toLowerCase());
+  const onlyA = a.filter((x, i) => !lb.includes(la[i]));
+  const onlyB = b.filter((x, i) => !la.includes(lb[i]));
+  const out = [];
+  for (let i = 0; i < Math.max(onlyA.length, onlyB.length); i++) out.push({ attr: 'Attribute differs', a: onlyA[i] || '—', b: onlyB[i] || '—', material: state.simClaude === 'no' });
+  return out;
+}
+function compareNow() {
+  if (state.mode === 'manual') {
+    readForm();
+    const errs = validate({ A: state.A, B: state.B });
+    if (errs.length) {
+      $('errors').innerHTML = `<div class="errs" role="alert"><strong>Fix these fields to compare</strong><ul class="why">${errs.map((e) => `<li>${esc(e)}</li>`).join('')}</ul></div>`;
+      return;
+    }
+    state.claude = { comparable: state.simClaude, note: state.simClaude === 'yes' ? 'No material differences found in the attributes provided.' : state.simClaude === 'no' ? 'The attributes show a material difference.' : 'Not enough attributes to judge equivalence.' };
+    state.diffs = manualDiffs();
+    state.missing = state.simClaude === 'unclear' ? ['Attributes needed to judge equivalence'] : [];
+    state.fromCandidate = null;
+    renderProducts();
+  }
+  $('errors').innerHTML = '';
+  openReport({ A: clone(state.A), B: clone(state.B), claude: clone(state.claude), diffs: clone(state.diffs), missing: clone(state.missing) });
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  const mode = t.closest('[data-mode]');
+  if (mode) { state.mode = mode.dataset.mode; $('errors').innerHTML = ''; renderProducts(); return; }
+  const ex = t.closest('[data-example]');
+  if (ex) { $('q').value = ex.dataset.example; runSearch(ex.dataset.example); renderSearch(); renderProducts(); return; }
+  const cand = t.closest('[data-cand]');
+  if (cand) {
+    const c = state.search.cands[Number(cand.dataset.cand)];
+    state.B = clone(c.product); state.claude = clone(c.claude); state.diffs = clone(c.diffs); state.missing = clone(c.missing);
+    state.fromCandidate = c.product.name; state.mode = 'auto';
+    renderProducts(); compareNow(); return;
+  }
+  const vw = t.closest('[data-view]');
+  if (vw) { const s = state.savings.find((x) => x.id === vw.dataset.view); if (s) { openReport(s.data); } return; }
+  const rm = t.closest('[data-remove]');
+  if (rm) { state.savings = state.savings.filter((x) => x.id !== rm.dataset.remove); renderSavings(); return; }
+  const tab = t.closest('[data-tab]');
+  if (tab && state.view) { state.view.tab = tab.dataset.tab; renderDialog(); $('dlg').scrollTo(0, 0); return; }
+  if (t.id === 'compare') { compareNow(); return; }
+  if (t.id === 'dlgClose') { $('dlg').close(); return; }
+  if (t.id === 'up' || t.id === 'down') {
+    const v = state.view;
+    v.times = Math.max(1, Math.min(24, v.times + (t.id === 'up' ? 1 : -1)));
+    const s = state.savings.find((x) => x.id === pairId(v.data)); if (s) s.times = v.times;
+    renderDialog(); renderSavings(); return;
+  }
+  if (t.id === 'addSave') {
+    const v = state.view;
+    state.savings.push({ id: pairId(v.data), data: clone(v.data), times: v.times });
+    renderDialog(); renderSavings();
+  }
+});
+$('dlg').addEventListener('click', (e) => { if (e.target === $('dlg')) $('dlg').close(); });
+document.addEventListener('change', (e) => {
+  const input = e.target.closest('[data-upload]');
+  if (input && input.files && input.files[0]) {
+    if (state.mode === 'manual') readForm();
+    const side = input.dataset.upload;
+    state.photos[side + '|' + state[side].name] = URL.createObjectURL(input.files[0]);
+    renderProducts();
+  }
+  if (e.target.id === 'sim') state.simClaude = e.target.value;
+});
+$('searchForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const q = $('q').value.trim();
+  if (!q) { $('q').focus(); return; }
+  runSearch(q); renderSearch(); renderProducts();
+});
+/* arrow keys move between the two report tabs */
+document.querySelector('.tabs').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  state.view.tab = state.view.tab === 'summary' ? 'details' : 'summary';
+  renderDialog();
+  $(state.view.tab === 'summary' ? 'tabSummary' : 'tabDetails').focus();
+});
+
+/* initial view */
+runSearch('women’s rose body wash');
+renderSearch(); renderProducts(); renderSavings();
+</script>
+</body>
+</html>
