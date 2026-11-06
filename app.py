@@ -65,6 +65,7 @@ DEMO_PHOTO_ERROR = ("Demo mode has saved readings only for the two demo label im
 # The only unsafe_allow_html string in the app: a constant, never interpolated.
 CSS = """
 <style>
+[data-testid="stMainBlockContainer"] { padding-top: 1.5rem; }
 .st-key-hero { text-align: center; padding: 1.5rem 0 0.5rem; }
 .st-key-hero h2 { padding-bottom: 0.25rem; font-size: 2.5rem; }
 .st-key-wordmark p { font-size: 1rem; font-weight: 700; color: #D81B60; letter-spacing: 0.02em; margin: 0.5rem 0 0; }
