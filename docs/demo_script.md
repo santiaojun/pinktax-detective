@@ -9,8 +9,8 @@ configured, My Savings empty. Have `fixtures/demo_images/pink_label.png`,
 upload. Times bought per year: 12.
 
 **Backup plan:** if the API fails at any point, turn on Demo mode in the
-sidebar and continue with the **Body wash** demo pair (see the end of this
-file).
+sidebar and continue with the **Pink vs blue label** demo pair: same
+storyline, same numbers, no API calls (see the end of this file).
 
 ---
 
@@ -95,14 +95,25 @@ file).
 
 ## Backup: Demo mode
 
-If any live call fails, turn on **Demo mode** (sidebar) and use the
-**Body wash** demo pair button instead of the photos. Saved answers keep
-the flow identical:
+If any live call fails, turn on **Demo mode** (sidebar). Saved answers from
+the real calls replace Claude, and every number stays the same:
 
-- Petal Glow Body Wash (women, $6.49, 12 fl oz) vs Ridge Body Wash (men,
-  $6.49, 18 fl oz), only the scent differs.
-- **POTENTIAL_PREMIUM**: **$1.83 vs $1.22 per 100 ml**, premium **50.00%**,
-  **$0.61 less per 100 ml ($2.16 less at this size)**.
-- Discover's "women's razor" works the same in Demo mode. Skip the
-  trust-boundary photo, or describe it: the live check returned an empty
-  price.
+1. **Discover:** "women's razor" shows the same essence terms as above.
+2. **Compare:** click the **Pink vs blue label** demo pair button first.
+   Demo mode uses saved equivalence answers only for a loaded demo pair, so
+   don't skip this step. It fills both cards: Everyday Body Wash, 16 fl oz,
+   A women $12.99, B men $9.99 (DEMO DATA).
+3. Optionally upload `pink_label.png` to A and `blue_label.png` to B. Demo
+   mode recognizes both images and fills the same fields from their saved
+   readings, with the price still empty.
+4. Click **Compare**: **POTENTIAL_PREMIUM**, **$2.75 vs $2.11 per 100 ml**,
+   premium **30.03%**, **$0.63 less per 100 ml ($3.00 less at this
+   size)**, $36.00 a year at 12 times.
+5. **Swap it** and **My Savings** work the same ($3.00 total).
+6. **Trust boundary:** skip the photo, or describe it: the live check on
+   `scratch/test_label.png` returned an empty price.
+
+If even the photos misbehave, the **Body wash** demo pair is a second
+fallback: Petal Glow (women, $6.49, 12 fl oz) vs Ridge (men, $6.49,
+18 fl oz), only the scent differs: **$1.83 vs $1.22 per 100 ml**, premium
+**50.00%**, **$0.61 less per 100 ml ($2.16 less at this size)**.

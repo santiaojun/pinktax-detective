@@ -198,13 +198,16 @@ def from_image(
 ) -> dict:
     """Product form fields read from a label photo, or {} on any failure.
 
-    Demo mode reads fixtures/extraction/<demo_name>.json instead of calling
-    Claude; both paths go through the same validation.
+    Demo mode reads a saved fixture instead of calling Claude: the one for a
+    recognized demo image (demo_pairs.DEMO_IMAGES), else
+    fixtures/extraction/<demo_name>.json. Both paths go through the same
+    validation.
     """
     if demo:
-        from demo_pairs import load_extraction_fixture
+        from demo_pairs import demo_image_name, load_extraction_fixture
 
-        payload = load_extraction_fixture(demo_name) if demo_name else None
+        name = demo_image_name(image_bytes) or demo_name
+        payload = load_extraction_fixture(name) if name else None
         return {} if payload is None else to_fields(payload)
 
     if not image_bytes or len(image_bytes) > MAX_IMAGE_BYTES or media_type not in MEDIA_TYPES:

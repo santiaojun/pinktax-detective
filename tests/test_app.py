@@ -13,6 +13,7 @@ INTENDED = {
     "body_wash": POTENTIAL_PREMIUM,
     "razor": NOT_COMPARABLE,
     "deodorant": INSUFFICIENT_EVIDENCE,
+    "everyday_body_wash": POTENTIAL_PREMIUM,
 }
 
 APP = str(Path(__file__).parent.parent / "app.py")

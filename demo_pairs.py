@@ -1,10 +1,11 @@
-"""Three synthetic product pairs. DEMO DATA: invented names, prices, and URLs.
+"""Synthetic product pairs. DEMO DATA: invented names, prices, and URLs.
 
 Each pair is form input only. The verdict always comes from compare(); the
 saved equivalence JSON in fixtures/equivalence/<pair_id>.json stands in for
 Claude's answer in Demo mode.
 """
 
+import hashlib
 import json
 from datetime import date
 from pathlib import Path
@@ -103,6 +104,33 @@ DEMO_PAIRS = {
             "date_seen": date(2026, 10, 30),
         },
     },
+    # The main storyline: the two synthetic photos in fixtures/demo_images/.
+    # Same printed text on both labels; only the color differs.
+    "everyday_body_wash": {
+        "title": "Pink vs blue label",
+        "a": {
+            "name": "Everyday Body Wash",
+            "price": "12.99",
+            "quantity": "16",
+            "unit": "fl_oz",
+            "pack_count": 1,
+            "label": "women",
+            "attributes": "Function: body cleanser. Aloe + glycerin.",
+            "source_url": "https://example.com/demo/everyday-body-wash-pink",
+            "date_seen": date(2026, 11, 6),
+        },
+        "b": {
+            "name": "Everyday Body Wash",
+            "price": "9.99",
+            "quantity": "16",
+            "unit": "fl_oz",
+            "pack_count": 1,
+            "label": "men",
+            "attributes": "Function: body cleanser. Aloe + glycerin.",
+            "source_url": "https://example.com/demo/everyday-body-wash-blue",
+            "date_seen": date(2026, 11, 6),
+        },
+    },
 }
 
 
@@ -114,6 +142,18 @@ def load_equivalence_fixture(pair_id: str) -> Optional[dict]:
 def load_extraction_fixture(name: str) -> Optional[dict]:
     """Saved photo-extraction JSON (product A's label) for a demo pair, or None."""
     return _load_json(EXTRACTION_DIR / f"{name}.json")
+
+
+def demo_image_name(image_bytes: bytes) -> Optional[str]:
+    """The DEMO_IMAGES key whose file has exactly these bytes, else None."""
+    digest = hashlib.sha256(image_bytes).hexdigest()
+    for name, path in DEMO_IMAGES.items():
+        try:
+            if hashlib.sha256(path.read_bytes()).hexdigest() == digest:
+                return name
+        except OSError:
+            continue
+    return None
 
 
 def _load_json(path: Path) -> Optional[dict]:
