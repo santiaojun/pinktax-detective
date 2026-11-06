@@ -12,6 +12,7 @@ from typing import Optional
 
 DEMO_LABEL = "DEMO DATA"
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "equivalence"
+EXTRACTION_DIR = Path(__file__).parent / "fixtures" / "extraction"
 
 DEMO_PAIRS = {
     "body_wash": {
@@ -99,8 +100,17 @@ DEMO_PAIRS = {
 
 def load_equivalence_fixture(pair_id: str) -> Optional[dict]:
     """Saved equivalence JSON for a demo pair, or None if missing or unreadable."""
+    return _load_json(FIXTURE_DIR / f"{pair_id}.json")
+
+
+def load_extraction_fixture(name: str) -> Optional[dict]:
+    """Saved photo-extraction JSON (product A's label) for a demo pair, or None."""
+    return _load_json(EXTRACTION_DIR / f"{name}.json")
+
+
+def _load_json(path: Path) -> Optional[dict]:
     try:
-        with open(FIXTURE_DIR / f"{pair_id}.json", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (OSError, json.JSONDecodeError):
         return None

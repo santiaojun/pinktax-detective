@@ -21,7 +21,9 @@ when asked.
   -> new list (ValueError unless POTENTIAL_PREMIUM; duplicate key = unchanged)
 - savings.remove_swap(records, pair_key) -> new list
 - savings.total(records), savings.yearly_total(records) -> Decimal
-- extract.from_image(image_bytes) -> dict of Product fields
+- extract.from_image(image_bytes, media_type, *, client=None, demo=False,
+  demo_name=None) -> dict of Product fields found ({} on any failure)
+- demo_pairs.load_extraction_fixture(name) -> dict | None
 The UI never reimplements math or calls Anthropic directly.
 
 ## Verdicts
