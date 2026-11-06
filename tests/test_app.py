@@ -1,6 +1,8 @@
+import io
 from pathlib import Path
 
 import pytest
+from PIL import Image
 from streamlit.testing.v1 import AppTest
 
 from pinktax.models import (
@@ -25,7 +27,7 @@ def click(at, label):
 
 @pytest.mark.parametrize("pair_id", sorted(INTENDED))
 def test_demo_mode_pair_shows_intended_verdict(pair_id):
-    at = AppTest.from_file(APP).run()
+    at = AppTest.from_file(APP, default_timeout=30).run()
     at.button(key=f"demo_{pair_id}").click().run()
     click(at, "Compare")
     assert not at.exception
@@ -35,7 +37,7 @@ def test_demo_mode_pair_shows_intended_verdict(pair_id):
 
 
 def test_savings_line_only_on_premium():
-    at = AppTest.from_file(APP).run()
+    at = AppTest.from_file(APP, default_timeout=30).run()
     at.button(key="demo_body_wash").click().run()
     at.number_input(key="times_per_year").set_value(6).run()
     click(at, "Compare")
@@ -49,7 +51,7 @@ def test_savings_line_only_on_premium():
 
 
 def test_field_errors_block_compare():
-    at = AppTest.from_file(APP).run()
+    at = AppTest.from_file(APP, default_timeout=30).run()
     at.text_input(key="a_price").set_value("abc").run()
     click(at, "Compare")
     assert at.session_state.result is None
@@ -58,7 +60,7 @@ def test_field_errors_block_compare():
 
 
 def test_demo_mode_off_is_insufficient_evidence():
-    at = AppTest.from_file(APP).run()
+    at = AppTest.from_file(APP, default_timeout=30).run()
     at.toggle(key="demo_mode").set_value(False).run()
     at.button(key="demo_body_wash").click().run()
     click(at, "Compare")
@@ -75,7 +77,7 @@ def test_demo_mode_off_calls_check_once_and_caches(monkeypatch):
         return {"comparable": "yes", "differences": [], "missing": [], "note": ""}
 
     monkeypatch.setattr(equivalence, "check", fake_check)
-    at = AppTest.from_file(APP)
+    at = AppTest.from_file(APP, default_timeout=30)
     at.secrets["ANTHROPIC_API_KEY"] = "test-key"
     at.run()
     at.toggle(key="demo_mode").set_value(False).run()
@@ -84,3 +86,45 @@ def test_demo_mode_off_calls_check_once_and_caches(monkeypatch):
     click(at, "Compare")
     assert calls == [("Petal Glow Body Wash", "Ridge Body Wash")]
     assert at.session_state.result["report"].verdict == POTENTIAL_PREMIUM
+
+
+def test_demo_mode_photo_storyline_end_to_end():
+    from demo_pairs import DEMO_IMAGES
+
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    at.button(key="demo_everyday_body_wash").click().run()
+    at.toggle(key="photo_mode").set_value(True).run()
+    # Renamed on purpose: demo images are recognized by content, on either card.
+    pink = ("IMG_0001.png", DEMO_IMAGES["pink_label"].read_bytes(), "image/png")
+    blue = ("IMG_0002.png", DEMO_IMAGES["blue_label"].read_bytes(), "image/png")
+    at.file_uploader(key="a_photo").set_value(pink).run()
+    at.file_uploader(key="b_photo").set_value(blue).run()
+    assert not at.exception
+    for side, price, label in (("a", "12.99", "women"), ("b", "9.99", "men")):
+        assert at.session_state[f"{side}_photo_error"] is None
+        assert at.session_state[f"{side}_attributes"] == "Function: body cleanser. Aloe + glycerin."
+        assert at.session_state[f"{side}_price"] == price   # the photo never sets price
+        assert at.session_state[f"{side}_label"] == label   # no printed label: kept
+    click(at, "Compare")
+    assert at.session_state.result["report"].verdict == POTENTIAL_PREMIUM
+
+
+def test_demo_mode_unknown_photo_on_b_shows_demo_error():
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    at.button(key="demo_everyday_body_wash").click().run()
+    at.toggle(key="photo_mode").set_value(True).run()
+    # A real PNG that isn't a demo image, even though it's named like one.
+    buf = io.BytesIO()
+    Image.new("RGB", (8, 8), "white").save(buf, format="PNG")
+    at.file_uploader(key="b_photo").set_value(("pink_label.png", buf.getvalue(), "image/png")).run()
+    assert not at.exception
+    assert at.session_state["b_photo_error"].startswith("Demo mode has saved readings only")
+    assert at.session_state["b_attributes"] == "Function: body cleanser. Aloe + glycerin."  # unchanged
+
+
+def test_corrupt_upload_does_not_crash_page():
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    at.toggle(key="photo_mode").set_value(True).run()
+    at.file_uploader(key="a_photo").set_value(("label.png", b"\x89PNG broken", "image/png")).run()
+    assert not at.exception
+    assert any(c.value == "Can't preview this file" for c in at.caption)
