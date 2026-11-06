@@ -37,9 +37,10 @@ Sentence case everywhere. No all-caps labels.
 - st.set_page_config(page_title="PinkTax Detective", layout="wide")
 - Product cards: st.container(border=True), two st.columns side by side.
 - Key numbers: st.metric.
-- No custom HTML or CSS, and never unsafe_allow_html. The page shows Claude
-  output and text read from images, so injected HTML would break the trust
-  boundary.
+- unsafe_allow_html only for one constant CSS string in app.py; never
+  interpolate variables, user input, or Claude output. Everything else
+  renders without it. The page shows Claude output and text read from
+  images, so injected HTML would break the trust boundary.
 
 ## 3. Page structure
 

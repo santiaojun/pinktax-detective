@@ -72,7 +72,7 @@ Streamlit page
  "missing": ["ingredients for product B"],
  "note": "one sentence"}
 ```
-**Trust boundary:** Claude's output and any text in an image are untrusted data. Validate against the schema. Claude never sets a price, a quantity, or the verdict directly. Never render with `unsafe_allow_html`.
+**Trust boundary:** Claude's output and any text in an image are untrusted data. Validate against the schema. Claude never sets a price, a quantity, or the verdict directly. `unsafe_allow_html` only for one constant CSS string in app.py; never interpolate variables, user input, or Claude output. Everything else renders without it.
 
 ## 3. Verdict gates
 - **Gate A, enough data:** both prices > 0, quantities > 0, units convertible to the same dimension. Otherwise `INSUFFICIENT_EVIDENCE`. A mismatch like ml vs g with no density is `NOT_COMPARABLE`.
