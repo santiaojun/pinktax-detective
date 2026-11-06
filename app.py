@@ -66,7 +66,10 @@ DEMO_PHOTO_ERROR = ("Demo mode has saved readings only for the two demo label im
 CSS = """
 <style>
 .st-key-hero { text-align: center; padding: 1.5rem 0 0.5rem; }
-.st-key-hero h2 { padding-bottom: 0.25rem; }
+.st-key-hero h2 { padding-bottom: 0.25rem; font-size: 2.5rem; }
+.st-key-wordmark p { font-size: 1rem; font-weight: 700; color: #D81B60; letter-spacing: 0.02em; margin: 0.5rem 0 0; }
+.st-key-session_metric { background: #FFFFFF; border-radius: 16px; padding: 0.5rem 1rem; box-shadow: 0 4px 16px rgba(216, 27, 96, 0.12); }
+.st-key-session_metric [data-testid="stMetricValue"] { font-size: 1.5rem; }
 .st-key-discover_query { max-width: 640px; margin: 0 auto; }
 .st-key-discover_query [data-baseweb="input"],
 .st-key-discover_query input { border-radius: 999px; }
@@ -527,10 +530,12 @@ def main():
 
     st.markdown(CSS, unsafe_allow_html=True)
     title_col, metric_col = st.columns([3, 1])
-    title_col.title("PinkTax Detective")
+    with title_col.container(key="wordmark"):
+        st.markdown("**PinkTax Detective**")
     if savings_mod is not None:
-        metric_col.metric("Potential savings this session",
-                          money(savings_mod.total(st.session_state.swaps)))
+        with metric_col.container(key="session_metric"):
+            st.metric("Potential savings this session",
+                      money(savings_mod.total(st.session_state.swaps)))
     discover_tab, compare_tab, savings_tab = st.tabs(
         VIEWS, key="view", on_change="rerun")
 
