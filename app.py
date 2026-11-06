@@ -117,6 +117,7 @@ def init_state():
     st.session_state.setdefault("errors", {})
     st.session_state.setdefault("result", None)
     st.session_state.setdefault("report_open", False)
+    st.session_state.setdefault("swaps", [])
 
 
 def fill(values_by_side: dict, pair_id):
@@ -213,7 +214,32 @@ def product_form(side: str, container):
 def compare_and_open():
     """Compare button: run the comparison, then open the report dialog."""
     run_compare()
-    st.session_state.report_open = st.session_state.result is not None
+    result = st.session_state.result
+    st.session_state.report_open = result is not None
+    if result is not None and savings_mod is not None:
+        a, b = read_product("a", {}), read_product("b", {})
+        try:
+            result["pair_key"] = savings_mod.pair_key(a, b)
+        except ValueError:
+            result["pair_key"] = None
+
+
+def add_to_savings(result: dict):
+    """Report button: save this pair to My Savings (savings.py does the math)."""
+    names = result["names"]
+    times = st.session_state.get("times_per_year") or None
+    try:
+        st.session_state.swaps = savings_mod.add_swap(
+            st.session_state.swaps, result["report"], result["pair_key"],
+            f"{names['a']} → {names['b']}", times)
+    except ValueError:
+        st.session_state.save_notice = NO_SAVING
+        return
+    st.session_state.save_notice = "Saved to My Savings"
+
+
+def remove_from_savings(pair_key: str):
+    st.session_state.swaps = savings_mod.remove_swap(st.session_state.swaps, pair_key)
 
 
 def open_report():
@@ -252,7 +278,14 @@ def report_summary(result: dict):
         if times:
             yearly = yearly_savings(report, times)
             st.success(esc(f"Bought {times} times a year, that's {money(yearly)} a year."))
-
+        if savings_mod is not None and result.get("pair_key"):
+            saved = savings_mod.has_swap(st.session_state.swaps, result["pair_key"])
+            st.button("In total savings" if saved else "Add to total savings",
+                      type="primary", disabled=saved, key="add_swap",
+                      on_click=add_to_savings, args=(result,))
+            notice = st.session_state.pop("save_notice", None)
+            if notice:
+                st.toast(notice)
     else:
         st.caption(NO_SAVING)
 
@@ -363,12 +396,27 @@ def discover_view():
 
 def savings_view():
     st.header("My Savings")
-    records = st.session_state.get("swaps", [])
+    records = st.session_state.swaps
     if savings_mod is None or not records:
         with st.container(key="swaps_empty"):
             st.write(EMPTY_SAVINGS)
         return
-    st.metric("Potential savings, estimated", money(savings_mod.total(records)))
+    total_col, yearly_col = st.columns(2)
+    total_col.metric("Total potential savings", money(savings_mod.total(records)))
+    yearly = savings_mod.yearly_total(records)
+    if yearly > 0:
+        yearly_col.metric("Per year, estimated", money(yearly))
+    for record in records:
+        with st.container(border=True):
+            text, action = st.columns([4, 1])
+            text.write(f"**{esc(record.label)}**")
+            detail = f"{money(record.savings_at_size)} less at this size"
+            if record.yearly_savings is not None:
+                detail += f" · {money(record.yearly_savings)} a year"
+            detail += f" · saved {record.date_saved.isoformat()}"
+            text.caption(esc(detail))
+            action.button("Remove", key=f"remove_{record.pair_key}",
+                          on_click=remove_from_savings, args=(record.pair_key,))
     st.caption("Potential savings, estimated. Not confirmed purchases.")
 
 
@@ -387,7 +435,11 @@ def main():
         st.caption(f"API key configured: {has_api_key()}")
 
     st.markdown(CSS, unsafe_allow_html=True)
-    st.title("PinkTax Detective")
+    title_col, metric_col = st.columns([3, 1])
+    title_col.title("PinkTax Detective")
+    if savings_mod is not None:
+        metric_col.metric("Potential savings this session",
+                          money(savings_mod.total(st.session_state.swaps)))
     discover_tab, compare_tab, savings_tab = st.tabs(
         VIEWS, key="view", on_change="rerun")
 
