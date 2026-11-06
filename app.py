@@ -75,7 +75,18 @@ CSS = """
 .st-key-discover_query input { border-radius: 999px; }
 .st-key-pick_essence button,
 .st-key-pick_other button { border-radius: 999px; }
-.st-key-pick_other button { font-size: 0.85rem; }
+.st-key-pick_essence [data-testid^="stBaseButton-pills"] {
+    background: #D81B60; border: 1px solid #D81B60; padding: 0.4rem 1rem;
+}
+.st-key-pick_essence [data-testid^="stBaseButton-pills"] p { color: #FFFFFF; font-weight: 600; }
+.st-key-pick_essence [data-testid="stBaseButton-pillsActive"] {
+    background: #AD1457; border-color: #AD1457; box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.25);
+}
+.st-key-pick_other [data-testid^="stBaseButton-pills"] {
+    background: transparent; border: 1px solid #D81B60; padding: 0.15rem 0.7rem;
+}
+.st-key-pick_other [data-testid^="stBaseButton-pills"] p { color: #AD1457; font-size: 0.8rem; }
+.st-key-pick_other [data-testid="stBaseButton-pillsActive"] { background: #FCE4EC; }
 .st-key-search_card, .st-key-terms_card, .st-key-card_a, .st-key-card_b,
 .st-key-verdict_card, .st-key-swaps_card {
     background: #FFFFFF; border: 1px solid #F6D3E1 !important;
