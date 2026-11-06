@@ -558,7 +558,8 @@ def savings_view():
 
 
 def main():
-    st.set_page_config(page_title="PinkTax Detective", page_icon=":mag:", layout="wide")
+    st.set_page_config(page_title="PinkTax Detective", page_icon=":mag:", layout="wide",
+                       initial_sidebar_state="collapsed")
     init_state()
 
     with st.sidebar:
