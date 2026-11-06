@@ -73,6 +73,16 @@ CSS = """
 .st-key-discover_query { max-width: 640px; margin: 0 auto; }
 .st-key-discover_query [data-baseweb="input"],
 .st-key-discover_query input { border-radius: 999px; }
+.st-key-discover_query [data-testid="stTextInputRootElement"] {
+    background: #FFFFFF; border: 2px solid #D81B60; border-radius: 999px;
+}
+.st-key-discover_query input {
+    background: #FFFFFF; font-size: 1.15rem; padding: 0.7rem 1.25rem;
+}
+.st-key-examples {
+    max-width: 640px; margin: 0.5rem auto 0; justify-content: flex-start;
+    align-items: center; padding-left: 0.5rem;
+}
 .st-key-pick_essence button,
 .st-key-pick_other button { border-radius: 999px; }
 .st-key-pick_essence [data-testid^="stBaseButton-pills"] {
