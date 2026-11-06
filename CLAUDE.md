@@ -16,7 +16,11 @@ when asked.
 - demo_pairs.DEMO_PAIRS, demo_pairs.load_equivalence_fixture(pair_id)
 - equivalence.check(a, b) -> dict | None
 - alternatives.suggest(query_or_attributes, *, client=None, demo=False) -> Alternatives
-- savings.add_swap(records, report, pair_key), savings.total(records)
+- savings.pair_key(a, b) -> str; savings.has_swap(records, pair_key) -> bool
+- savings.add_swap(records, report, pair_key, label, times_per_year=None)
+  -> new list (ValueError unless POTENTIAL_PREMIUM; duplicate key = unchanged)
+- savings.remove_swap(records, pair_key) -> new list
+- savings.total(records), savings.yearly_total(records) -> Decimal
 - extract.from_image(image_bytes) -> dict of Product fields
 The UI never reimplements math or calls Anthropic directly.
 
