@@ -15,7 +15,7 @@ when asked.
 - verdict.compare(a, b, equivalence) -> Report
 - demo_pairs.DEMO_PAIRS, demo_pairs.load_equivalence_fixture(pair_id)
 - equivalence.check(a, b) -> dict | None
-- alternatives.suggest(product) -> list
+- alternatives.suggest(query_or_attributes, *, client=None, demo=False) -> Alternatives
 - savings.add_swap(records, report, pair_key), savings.total(records)
 - extract.from_image(image_bytes) -> dict of Product fields
 The UI never reimplements math or calls Anthropic directly.
@@ -34,7 +34,9 @@ INSUFFICIENT_EVIDENCE, PRICE_COMPARISON_ONLY.
   name. Strip gendered words first.
 - Claude returns search terms only, never URLs. Code builds links for a
   fixed domain list.
-- Never use unsafe_allow_html. No custom HTML/CSS injection.
+- unsafe_allow_html only for one constant CSS string in app.py; never
+  interpolate variables, user input, or Claude output. Everything else
+  renders without it.
 - Catch specific exceptions, not bare Exception.
 - Never hardcode verdicts. Demo pairs and fixtures are inputs.
 - API key from st.secrets or .env. Never print it, never commit it.
